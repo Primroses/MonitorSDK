@@ -1,0 +1,39 @@
+{
+  "name": "utils",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build:amd": "rollup index.js -f amd -o ./dist/dist.amd.js",
+    "build:cjs": "rollup index.js -f cjs -o ./dist/dist.cjs.js",
+    "build:es": "rollup index.js -f es -o ./dist/dist.es.js",
+    "build:iife": "rollup index.js -f iife -n result -o ./dist/dist.iife.js",
+    "build:umd": "rollup index.js -f umd -n result -o ./dist/dist.umd.js",
+    "build:all": "npm run build:amd && npm run build:cjs && npm run build:es && npm run build:iife && npm run build:umd",
+    "build": "rollup -c",
+    "tsc:w": "tsc -w",
+    "jest": "jest"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@babel/core": "^7.7.7",
+    "@babel/preset-env": "^7.7.7",
+    "@types/jest": "^26.0.0",
+    "babel-plugin-external-helpers": "^6.22.0",
+    "babel-preset-es2015": "^6.24.1",
+    "jest": "^26.0.1",
+    "rollup-plugin-babel": "^4.3.3",
+    "rollup-plugin-commonjs": "^10.1.0",
+    "rollup-plugin-eslint": "^7.0.0",
+    "rollup-plugin-node-resolve": "^5.2.0",
+    "rollup-plugin-sourcemaps": "^0.4.2",
+    "rollup-plugin-string": "^3.0.0",
+    "rollup-plugin-terser": "^5.1.3",
+    "rollup-plugin-typescript2": "^0.25.3",
+    "rollup-plugin-uglify": "^6.0.4",
+    "ts-jest": "^26.1.1",
+    "typescript": "^3.7.3"
+  }
+}
