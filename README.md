@@ -27,17 +27,17 @@
 
 ## 模板中实现的功能有(2020/7/2)
 
-[√]基于TypeScript的类型检查
-[√]PV,UV的简单记录
-[√]Error和Promise的拦截
-[√]ajax 和 fetch的拦截
-[√]自定义性能指标
-[√]自定义上报数据
-[X]强制上报
-[X]没有一个直观的可视化后台
-[X]架构方面可能需要进一步的完善
+[√]基于TypeScript的类型检查  
+[√]PV,UV的简单记录  
+[√]Error和Promise的拦截  
+[√]ajax 和 fetch的拦截  
+[√]自定义性能指标  
+[√]自定义上报数据  
+[X]强制上报  
+[X]没有一个直观的可视化后台  
+[X]架构方面可能需要进一步的完善  
 [X]暂时只实现Web，还有小程序和Native需要集成  
-[X]前端框架也没有集成(Vue,React,Angular等)
+[X]前端框架也没有集成(Vue,React,Angular等)  
 [X]缺少单元测试
 
 ## 异常类型
@@ -53,7 +53,7 @@
 
 ## 整个监控SDK的架构
 
-![SDK架构](./images/image.png)
+![SDK架构](https://github.com/Primroses/MonitorSDK/blob/master/images/image.png)
 
 - 大前端中Web端，小程序和hybrid三端中植入SDK。
 - SDK的Core里面的监控模块
