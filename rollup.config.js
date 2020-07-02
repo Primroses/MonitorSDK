@@ -1,31 +1,35 @@
 import typescript from "rollup-plugin-typescript2";
-import sourceMaps from "rollup-plugin-sourcemaps";
-import resolve from "rollup-plugin-node-resolve";
-import { terser } from "rollup-plugin-terser";
-import { string } from "rollup-plugin-string";
+// import sourceMaps from "rollup-plugin-sourcemaps"; // 生成sourceMap
+import resolve from "rollup-plugin-node-resolve"; // for using third party modules in node_modules
+import { terser } from "rollup-plugin-terser"; // Rollup plugin to minify generated es bundle.
 // 这个 rollup-plugin-commonjs 插件就是用来将 CommonJS 转换成 ES2015 模块的。
-import { uglify } from 'rollup-plugin-uglify';
+import { uglify } from "rollup-plugin-uglify"; // 这个东西不支持ES6的构建的时候 得target是ES5
+
 export default {
   plugins: [
     typescript({
       exclude: "node_modules/**",
-      typescript: require("typescript")
+      typescript: require("typescript"),
     }),
     // sourceMaps(),
-    // resolve(),
-    // terser(),
-    // string({
-    //     // Required to be specified
-    //     include: "./src/*.tmp",
-    //   })
-    // uglify()
+    resolve(),
+    terser(),
+    uglify(),
   ],
   input: "./src/error/core.ts",
   sourceMap: true,
-  output: {
-    file: "./dist/monitor.js",
-    format: "umd", //"amd", "cjs", "system", "esm", "iife" or "umd".
-    name: "utils",
-    env: "production"
-  }
+  output: [
+    {
+      file: "./dist/monitor.umd.js",
+      format: "umd", //"amd", "cjs", "system", "esm", "iife" or "umd".
+      name: "monitor",
+      env: "production",
+    },
+    {
+      file: "./dist/monitor.iife.js",
+      format: "iife",
+      name:"monitor",
+      env: "production",
+    },
+  ],
 };

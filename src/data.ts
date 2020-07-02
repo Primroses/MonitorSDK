@@ -1,12 +1,4 @@
 // 定制化的用户信息
-import {
-  User,
-  UpLoadData,
-  DeviceInfo,
-  DataType,
-  PerformanceOptions,
-  ResourceOptions,
-} from "./types";
 import { getBrowserInfo, getOSInfo } from "./utils";
 
 // 上报的基础数据

@@ -35,5 +35,8 @@
     "rollup-plugin-uglify": "^6.0.4",
     "ts-jest": "^26.1.1",
     "typescript": "^3.7.3"
+  },
+  "dependencies": {
+    "uninstall": "0.0.0"
   }
 }

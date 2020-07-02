@@ -1,4 +1,3 @@
-import { UpLoadData, AdaptorType } from "./types";
 import { useReported } from "./reported";
 // import { store } from "./store";
 // 准确来说应该是Data适配器

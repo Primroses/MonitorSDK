@@ -1,11 +1,5 @@
 import { Data, PerformanceData, ResourceData } from "./data";
 import {
-  DataType,
-  HistoryFun,
-  PerformanceOptions,
-  ResourceOptions,
-} from "./types";
-import {
   ErrorAdaptor,
   TrackAdaptor,
   DataAdaptor,

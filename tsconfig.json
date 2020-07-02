@@ -14,7 +14,7 @@
       "~/*": ["./types/*", "./index"]
     },
     "esModuleInterop": true,
-    "target": "es6", // 编译目标
+    "target": "es5", // 编译目标
     "outDir": "build" // 输出目录
     // "declaration": true, // 是否自动创建类型声明
     // "declarationDir":"types"
