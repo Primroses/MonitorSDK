@@ -15,6 +15,13 @@ interface DeviceInfo {
   os: string;
 }
 
+interface PageInfo {
+  pageWidth: string;
+  pageHeight: string;
+  screenWidth: string;
+  screenHeight: string;
+}
+
 interface PerformanceOptions {
   loadPageTime: number;
   domReady: number;
@@ -23,22 +30,30 @@ interface PerformanceOptions {
   TTFB: number;
   contentReady: number;
   connect: number;
-  url:string;
+  url: string;
 }
 
-interface ResourceOptions{
-  resourceName:string;
-  redirect:number;
-  request:number;
-  duration:number;
-  connect:number;
+interface ResourceOptions {
+  resourceName: string;
+  redirect: number;
+  request: number;
+  duration: number;
+  connect: number;
 }
 
 // 上报的数据类型
-type DataType = "ERROR" | "PROMISE" | "AJAX" | "RESOURCE" | "TRACK" | "EVENT" | "PERFORMANCE";
+// type DataType = "ERROR" | "PROMISE" | "AJAX" | "RESOURCE" | "TRACK" | "EVENT" | "PERFORMANCE";
+
+type MainDataType =
+  | "ERROR"
+  | "PROMISE"
+  | "AJAX"
+  | "RESOURCE"
+  | "TRACK"
+  | "EVENT"
+  | "PERFORMANCE";
 
 // History的方法
 type HistoryFun = "pushState" | "replaceState";
 
 type AdaptorType = "ERROR" | "TRACK" | "PERFORMANCE" | "RESOURCE"; // 错误还是 路径 性能类型
-

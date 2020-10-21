@@ -1,4 +1,4 @@
-import typescript from "rollup-plugin-typescript2";
+import typescript from "@rollup/plugin-typescript";
 // import sourceMaps from "rollup-plugin-sourcemaps"; // 生成sourceMap
 import resolve from "rollup-plugin-node-resolve"; // for using third party modules in node_modules
 import { terser } from "rollup-plugin-terser"; // Rollup plugin to minify generated es bundle.
@@ -9,26 +9,38 @@ export default {
   plugins: [
     typescript({
       exclude: "node_modules/**",
-      typescript: require("typescript"),
+      // typescript: require("typescript"),
     }),
     // sourceMaps(),
     resolve(),
     terser(),
     uglify(),
   ],
-  input: "./src/error/core.ts",
+  input: "src/client/index.ts",
   sourceMap: true,
   output: [
+    // {
+    //   file: "./dist/monitor.umd.js",
+    //   format: "umd", //"amd", "cjs", "system", "esm", "iife" or "umd".
+    //   name: "monitor",
+    //   env: "production",
+    // },
+    // {
+    //   file: "./dist/monitor.iife.js",
+    //   format: "iife",
+    //   name: "monitor",
+    //   env: "production",
+    // },
     {
-      file: "./dist/monitor.umd.js",
-      format: "umd", //"amd", "cjs", "system", "esm", "iife" or "umd".
-      name: "monitor",
+      file: "./playground/index.cjs.js",
+      format: "umd",
+      name: "index",
       env: "production",
     },
     {
-      file: "./dist/monitor.iife.js",
-      format: "iife",
-      name:"monitor",
+      file: "./playground/index.cjs.js",
+      format: "umd",
+      name: "index",
       env: "production",
     },
   ],

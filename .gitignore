@@ -1,1 +1,3 @@
 /node_modules*
+.cz-config.js
+commit.bash

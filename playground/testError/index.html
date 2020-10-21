@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  
+</body>
+</html>
+<script src="../index.cjs.js"></script>
+<script>
+  var worker = new Worker("../testWorker.js")
+  worker.postMessage("hello Worker")
+  worker.addEventListener('message',function(e){
+    console.log(e.data)
+  })
+</script>
