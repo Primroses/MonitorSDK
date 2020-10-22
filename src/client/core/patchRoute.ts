@@ -1,3 +1,3 @@
 export default function patchRoute(context: any) {
-  console.log(context, "Route");
+  // console.log(context, "Route");
 }

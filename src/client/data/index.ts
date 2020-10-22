@@ -1,23 +1,23 @@
 // 构建上报数据的基础原型
-class Data {
+export class Data {
   userId: string; // 用户的唯一标识
 
-  trackId: string; // 错误发生过后的唯一标识该错误的Id
+  // trackId: string; // 错误发生过后的唯一标识该错误的Id
 
-  timeStamp: string; // 当前发生错误时间的时间撮
+  timeStamp?: string; // 当前发生错误时间的时间撮
 
   // 需要两个类型进行 定位索引?
-  mainType: MainDataType; // 上报数据的类型(主要的)
+  mainType?: MainDataType; // 上报数据的类型(主要的)
 
   // private minorType:MinorDataType; // 次要类型
 
   device: DeviceInfo; // 操作硬件的信息
 
-  currentUrl: string; // 当前所处的Url
+  currentUrl?: string; // 当前所处的Url
 
-  refererUrl: string; // 是从什么来源 到什么来源的
+  refererUrl?: string; // 是从什么来源 到什么来源的
 
-  pageInfo: PageInfo; // 当前页面的信息
+  pageInfo?: PageInfo; // 当前页面的信息
   // 各类数据类型
   appVersion: number;
 
@@ -25,7 +25,7 @@ class Data {
 
   constructor(options: Data) {
     this.userId = options.userId;
-    this.trackId = options.trackId;
+    // this.trackId = options.trackId;
     this.timeStamp = options.timeStamp;
     this.mainType = options.mainType;
     this.device = options.device;
@@ -34,5 +34,24 @@ class Data {
     this.pageInfo = options.pageInfo;
     this.appVersion = options.appVersion;
     this.apiVersion = options.apiVersion;
+  }
+}
+
+interface Error {
+  lineno: string;
+  filename: string;
+  timeStamp: string;
+  message: string;
+  stack: string;
+}
+interface ResourceError {
+  resourceType: string;
+  sourceUrl: string;
+}
+export class ErrorData extends Data {
+  data: Error | ResourceError;
+  constructor(options: ErrorData) {
+    super(options);
+    this.data = options.data;
   }
 }

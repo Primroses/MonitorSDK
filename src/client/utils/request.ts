@@ -1,3 +1,4 @@
+import { Data } from "../data/index";
 /**
  * 就不发ajax 直接图片 不影响页面的性能
  * @param {string} url
@@ -10,15 +11,15 @@ function useRequest(url: string) {
 }
 type DataKey = keyof Data;
 
-function getRequsetUrl(url: string, data: Data): string {
+export function getRequsetUrl(url: string, data: Data): string {
   let dataStr = url + "?" + "";
-  
+
   Object.keys(data).forEach((val: DataKey) => {
     dataStr += `${val}=${data[val]}&`;
   });
-  
+
   dataStr.substring(dataStr.lastIndexOf("&"), -1);
-  
+
   return dataStr;
 }
 

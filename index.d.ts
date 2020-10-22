@@ -1,4 +1,5 @@
 /// <reference path="./node_modules/@types/jest/index.d.ts" />
+
 interface User {
   userId: string | number;
   userName: string;
@@ -16,10 +17,10 @@ interface DeviceInfo {
 }
 
 interface PageInfo {
-  pageWidth: string;
-  pageHeight: string;
-  screenWidth: string;
-  screenHeight: string;
+  pageWidth: number;
+  pageHeight: number;
+  screenWidth: number;
+  screenHeight: number;
 }
 
 interface PerformanceOptions {

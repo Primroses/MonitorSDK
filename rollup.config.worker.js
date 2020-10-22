@@ -16,8 +16,8 @@ export default {
     terser(),
     uglify(),
   ],
-  input: "src/client/index.ts",
-  sourceMap: true,
+  input: "src/client/worker/index.ts",
+  // sourceMap: true,
   output: [
     // {
     //   file: "./dist/monitor.umd.js",
@@ -31,17 +31,17 @@ export default {
     //   name: "monitor",
     //   env: "production",
     // },
-    {
-      file: "./playground/index.js",
-      format: "umd",
-      name: "index",
-      env: "production",
-    },
     // {
-    //   file: "./playground/index.cjs.js",
+    //   file: "./playground/worker.cjs.js",
     //   format: "umd",
     //   name: "index",
     //   env: "production",
     // },
+    {
+      file: "./playground/worker.js",
+      format: "umd",
+      name: "index",
+      env: "production",
+    },
   ],
 };

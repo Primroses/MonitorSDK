@@ -120,3 +120,49 @@ export const beautifyConsole = (function (originFun) {
     );
   };
 })(console.log);
+
+/** 循环任务 setTimeOut 更精确一点
+ *  循环的时间
+ * @param {Number} time
+ */
+export function cycleTask(time: number, callBack: Function) {
+  let count = 0; // 乘以误差
+  const startTime = new Date().getTime();
+  let timeCounter = setTimeout(_cycleTask, time);
+  function _cycleTask() {
+    count++;
+    const offset = new Date().getTime() - (startTime + count * time);
+    let nextTime = time - offset;
+    if (nextTime < 0) {
+      nextTime = 0;
+    }
+    callBack();
+    console.log("误差：" + offset + "ms，下一次执行：" + nextTime);
+    timeCounter = setTimeout(_cycleTask, nextTime);
+  }
+}
+
+// 可能得有兼容性 考虑
+export function getPageInfo() {
+  return {
+    pageWidth: document.body.clientWidth,
+    pageHeight: document.body.clientHeight,
+    screenWidth: window.screen.width,
+    screenHeight: window.screen.height,
+  };
+}
+
+export function deepClone(obj: any, map = new Map()) {
+  if (typeof obj != "object") {
+    return;
+  }
+  // 当循环的时候 见到有 相同的引用的 直接返回
+  if (map.has(obj)) return map.get(obj);
+  let _obj: any = Array.isArray(obj) ? [] : {};
+  map.set(obj, _obj);
+  for (let key in obj) {
+    _obj[key] =
+      typeof obj[key] === "object" ? deepClone(obj[key], map) : obj[key];
+  }
+  return _obj;
+}

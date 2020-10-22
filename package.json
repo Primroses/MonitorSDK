@@ -10,7 +10,8 @@
     "build:iife": "rollup index.js -f iife -n result -o ./dist/dist.iife.js",
     "build:umd": "rollup index.js -f umd -n result -o ./dist/dist.umd.js",
     "build:all": "npm run build:amd && npm run build:cjs && npm run build:es && npm run build:iife && npm run build:umd",
-    "build": "rollup -c",
+    "build": "rollup -c && npm run build:worker",
+    "build:worker":"rollup -c ./rollup.config.worker.js",
     "tsc:w": "tsc -w",
     "jest": "jest"
   },
