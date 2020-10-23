@@ -11,7 +11,7 @@ interface UpLoadData {
 interface DeviceInfo {
   browser: {
     type: string;
-    UA: string;
+    ua: string;
   };
   os: string;
 }

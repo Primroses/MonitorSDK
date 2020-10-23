@@ -2,7 +2,7 @@
 export class Data {
   userId: string; // 用户的唯一标识
 
-  // trackId: string; // 错误发生过后的唯一标识该错误的Id
+  trackId: string; // 错误发生过后的唯一标识该错误的Id
 
   timeStamp?: string; // 当前发生错误时间的时间撮
 
@@ -23,9 +23,11 @@ export class Data {
 
   apiVersion: number;
 
+  appId:number;
+
   constructor(options: Data) {
     this.userId = options.userId;
-    // this.trackId = options.trackId;
+    this.trackId = options.trackId;
     this.timeStamp = options.timeStamp;
     this.mainType = options.mainType;
     this.device = options.device;
@@ -34,6 +36,7 @@ export class Data {
     this.pageInfo = options.pageInfo;
     this.appVersion = options.appVersion;
     this.apiVersion = options.apiVersion;
+    this.appId = options.appId;
   }
 }
 

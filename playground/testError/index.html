@@ -6,7 +6,8 @@
     <title>Document</title>
     <script src="../index.js"></script>
   </head>
-  <body></body>
+  <body>
+  </body>
 </html>
 <script>
   throw new Error("AAAAAA");
@@ -15,5 +16,11 @@
   // worker.addEventListener('message',function(e){
   //   console.log(e.data)
   // })
+</script>
+
+<script>
+    new Promise((resolve,reject)=>{
+    throw new Error("CCCC")
+  })
 </script>
 <script src="./index.js"></script>

@@ -3,19 +3,19 @@
  */
 export function getBrowserInfo() {
   const inBrowser = typeof window !== "undefined";
-  const UA = inBrowser && window.navigator.userAgent.toLowerCase();
-  const isIE = UA && /msie|trident/.test(UA);
-  const isEdge = UA && UA.indexOf("edge/") > 0;
-  const isChrome = UA && /chrome\/\d+/.test(UA) && !isEdge;
-  const isOpera = UA && (UA.indexOf("opera") > -1 || UA.indexOf("opr") > -1);
+  const ua = inBrowser && window.navigator.userAgent.toLowerCase();
+  const isIE = ua && /msie|trident/.test(ua);
+  const isEdge = ua && ua.indexOf("edge/") > 0;
+  const isChrome = ua && /chrome\/\d+/.test(ua) && !isEdge;
+  const isOpera = ua && (ua.indexOf("opera") > -1 || ua.indexOf("opr") > -1);
   const isSafari =
-    UA && UA.indexOf("safari") > -1 && UA.indexOf("chrome") === -1;
-  const isQQ = UA && UA.indexOf("mqqbrowser") > 0;
-  const isFF = UA && UA.indexOf("firefox") > -1;
-  const isUC = UA && UA.indexOf("ucbrowser/") > 0;
-  const isBaidu = UA && UA.indexOf("baiduboxapp") > 0;
-  const isAndroid = UA && UA.indexOf("android") > 0;
-  const isIOS = UA && /iphone|ipad|ipod|ios/.test(UA);
+    ua && ua.indexOf("safari") > -1 && ua.indexOf("chrome") === -1;
+  const isQQ = ua && ua.indexOf("mqqbrowser") > 0;
+  const isFF = ua && ua.indexOf("firefox") > -1;
+  const isUC = ua && ua.indexOf("ucbrowser/") > 0;
+  const isBaidu = ua && ua.indexOf("baiduboxapp") > 0;
+  const isAndroid = ua && ua.indexOf("android") > 0;
+  const isIOS = ua && /iphone|ipad|ipod|ios/.test(ua);
   // 组装数据 省掉 更多的if else的判断
   const BrowerTypeArr = [
     isIE,
@@ -45,7 +45,7 @@ export function getBrowserInfo() {
   ].map((val) => {
     return {
       type: val,
-      UA,
+      ua,
     };
   });
 
@@ -55,7 +55,7 @@ export function getBrowserInfo() {
     }
   }).filter(Boolean)[0];
 
-  return BrowerRetArr[index] ? BrowerRetArr[index] : { type: "unknow", UA };
+  return BrowerRetArr[index] ? BrowerRetArr[index] : { type: "unknow", ua };
 }
 
 // 简单判断
@@ -165,4 +165,11 @@ export function deepClone(obj: any, map = new Map()) {
       typeof obj[key] === "object" ? deepClone(obj[key], map) : obj[key];
   }
   return _obj;
+}
+
+
+export function genNonDuplicateID(){
+  let idStr = Date.now().toString(36)
+  idStr += Math.random().toString(36).substr(3)
+  return idStr
 }
