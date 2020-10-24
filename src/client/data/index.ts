@@ -23,7 +23,7 @@ export class Data {
 
   apiVersion: number;
 
-  appId:number;
+  appId: number;
 
   constructor(options: Data) {
     this.userId = options.userId;
@@ -52,7 +52,7 @@ interface ResourceError {
   sourceUrl: string;
 }
 export class ErrorData extends Data {
-  data: Error | ResourceError;
+  data: Partial<Error> & Partial<ResourceError>;
   constructor(options: ErrorData) {
     super(options);
     this.data = options.data;

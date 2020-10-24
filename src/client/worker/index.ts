@@ -1,4 +1,5 @@
 import DB from "../data/dataBase";
+import { ErrorData } from "../data/index";
 // 这里是做数据清洗的 因为可能会多次触发同一次事件
 
 // errorId 和 trackId 的思考
@@ -14,12 +15,54 @@ import DB from "../data/dataBase";
 const db = new DB("monitor");
 
 // 这里先清洗数据 清洗的目的是 先把所有的表格 数据 都拿出来 后再进行 清洗
+// 清洗的是 多次 重复性数据 感觉 可以 LRU.... (LRU 也是 清洗的一部分 保证里面只有一条....)
 
-async function cleanTableData() {
-  const data = await db.read("error");
-  console.log(data.length);
-  for (let i = 0; i < data.length; i++) {
-    console.log(data[i]);
+// 客户端和 服务端的清理是不一样的? 客户端 尽量保证 数据的 单一性 ，重复性数据 尽量 不出现
+// 服务端 是清理 不同用户的数据 如果 多个用户同时 出现 相同的问题 就得 注意了....
+
+// 但是LRU 有一个问题就是 假如那人 首页 -> 详情页 -> 首页 -> 详情页 这样的话 存储的情况就是 详情页 在栈顶了 违反了 一些 正常逻辑...
+
+// 还先不能考虑 小程序 。小程序 不知道支不支持 web worker
+
+async function cleanTableData(tableName: string) {
+  // 我觉得 error 里面就应该存在那种 patch Function中出现的问题 。正常的error 都应该直接上报的
+  let data = await db.read(tableName);
+  // 定时清理 但是 应该要的是LRU 才对的 翻转过来 的 LRU 好像有点扯?
+  // 这种错误 直接过滤成
+
+  if (tableName === "error") {
+    const retData: ErrorData[] = [];
+    const stackSet = new Set<string>();
+    // const retIndex: number[] = []; // 本来还想记录一下 index 值的 这里需要考虑一下 记不记录
+    for (let error of data) {
+      // 拿到关键的 对比
+      const { stack } = error.data;
+      if (!stackSet.has(stack.trim())) {
+        stackSet.add(stack.trim());
+      }
+    }
+    // 超级简单的LRU 算法 性能肯定没有 链表来得好 LRU 过后 将拿出来的 数据全部都上传....
+    for (let stack of stackSet) {
+      retData.push(
+        data.filter((val, index) => stack === val.data.stack.trim()).pop()
+      );
+    }
+    await clearAll(tableName);
+    // LRU 过后 得同步 找到对应 index 值 删掉 其中的 不要全部删掉?
+    for (let ret of retData) {
+      await db.add(tableName, ret);
+    }
   }
+  // 日常没找到 标点符号 .....
 }
-cleanTableData();
+
+async function clearAll(tableName: string) {
+  await db.clear(tableName);
+}
+
+// 启动 清除
+const cleanTables: string[] = ["error"];
+
+cleanTables.forEach((val) => {
+  cleanTableData(val);
+});

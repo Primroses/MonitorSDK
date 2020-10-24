@@ -129,6 +129,21 @@ export default class DB {
       });
     });
   }
+  // 直接清理一手
+  async clear(tableName: string) {
+    
+    const DBRequest = await this.DBResolve();
+    const objectStore = DBRequest.transaction(
+      [tableName],
+      "readwrite"
+    ).objectStore(tableName);
+
+    return new Promise<any>((resolve, reject) => {
+      const ret = objectStore.clear();
+      console.log(ret, "RET_____");
+      resolve(ret);
+    });
+  }
 }
 
 // 1. 观察者模式 就很难拿到里面的返回值了???

@@ -52,7 +52,8 @@ type MainDataType =
   | "RESOURCE"
   | "TRACK"
   | "EVENT"
-  | "PERFORMANCE";
+  | "PERFORMANCE"
+  | "EVENTLISTENER";
 
 // History的方法
 type HistoryFun = "pushState" | "replaceState";
