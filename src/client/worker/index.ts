@@ -42,17 +42,19 @@ async function cleanTableData(tableName: string) {
       }
     }
     // 超级简单的LRU 算法 性能肯定没有 链表来得好 LRU 过后 将拿出来的 数据全部都上传....
+    // LRU的目的是 将最后出现的那个 留下来 ，就是这个时间内 这个bug 还是出现的 这个错误仍然存在
     for (let stack of stackSet) {
       retData.push(
         data.filter((val, index) => stack === val.data.stack.trim()).pop()
       );
     }
-    await clearAll(tableName);
+    // 
     // LRU 过后 得同步 找到对应 index 值 删掉 其中的 不要全部删掉?
-    for (let ret of retData) {
-      await db.add(tableName, ret);
-    }
+    // for (let ret of retData) {
+    //   await db.add(tableName, ret);
+    // }
   }
+  await clearAll(tableName);
   // 日常没找到 标点符号 .....
 }
 
@@ -65,4 +67,5 @@ const cleanTables: string[] = ["error"];
 
 cleanTables.forEach((val) => {
   cleanTableData(val);
+  // clearAll(val)
 });

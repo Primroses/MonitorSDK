@@ -131,6 +131,7 @@ async function errorController(data) {
     )
     `;
     }
+    // console.log(sql);
     await collection_1.useQuery(sql);
 }
 exports.errorController = errorController;

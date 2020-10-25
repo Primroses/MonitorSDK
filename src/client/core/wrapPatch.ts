@@ -26,6 +26,7 @@ export default function warpPatch(context: Context) {
           refererUrl: document.referrer, // 看下来源
           eventType: e.name,
         }); // 覆盖第一个参数
+        // 这些数据需要先过滤 在发
         context.db.add("error", data);
       }
     };

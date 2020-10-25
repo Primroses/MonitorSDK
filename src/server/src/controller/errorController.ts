@@ -203,5 +203,6 @@ export async function errorController(data: ErrorData) {
     )
     `;
   }
+  // console.log(sql);
   await useQuery(sql);
 }

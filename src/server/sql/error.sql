@@ -22,7 +22,7 @@ DROP TABLE IF EXISTS `error`;
 CREATE TABLE `error` (
   `errorId` int(11) NOT NULL AUTO_INCREMENT,
   `appId` int(11) NOT NULL,
-  `userId` int(11) NOT NULL,
+  `userId` varchar(11) NOT NULL,
   `apiVersion` int(11) NOT NULL,
   `appVersion` int(11) NOT NULL,
   `currentUrl` varchar(50) DEFAULT NULL,

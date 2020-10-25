@@ -28,7 +28,7 @@ export function initMonitor(options?: any) {
 
   // 初始化 一些 data?
   const data = new Data({
-    userId: "AAAA",
+    userId: "1345854620",
     trackId: genNonDuplicateID(),
     device: {
       os: getOSInfo(),
