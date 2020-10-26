@@ -49,7 +49,6 @@ export default function patchError(context: Context) {
       }); // 覆盖第一个参数
       // 操作数据库 (这种是不是应该马上上报呢?) 发生错误 应该直接上报
       context.request(data, "/error");
-      throw new Error("Test Error");
     },
     true
   );

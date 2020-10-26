@@ -74,3 +74,5 @@ class DB {
     });
   }
 }
+
+Promise.reject("ACA")

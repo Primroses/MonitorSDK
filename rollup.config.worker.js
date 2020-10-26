@@ -41,7 +41,6 @@ export default {
       file: "./playground/worker.js",
       format: "umd",
       name: "index",
-      env: "production",
     },
   ],
 };

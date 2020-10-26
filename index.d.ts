@@ -53,7 +53,8 @@ type MainDataType =
   | "TRACK"
   | "EVENT"
   | "PERFORMANCE"
-  | "EVENTLISTENER";
+  | "EVENTLISTENER"
+  | "CONSOLE"
 
 // History的方法
 type HistoryFun = "pushState" | "replaceState";

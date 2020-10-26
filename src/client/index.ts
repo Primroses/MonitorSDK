@@ -11,11 +11,15 @@ import { useRequest, getRequsetUrl } from "./utils/request";
 import DB from "./data/dataBase";
 import { ErrorData, Data } from "./data/index";
 import { getBrowserInfo, getOSInfo, genNonDuplicateID } from "./utils/index";
+import DataQuene from "./data/dataQuene";
+
+import { InitWorker, workerMain } from "./worker/initWorker";
 
 export interface Context {
   db: DB;
   data: () => ErrorData; // 工厂函数
   request: (data: Data, url: string) => void;
+  dataQuene: DataQuene;
 }
 
 // 外面调用的主入口
@@ -23,9 +27,9 @@ export interface Context {
 // baseUrl , userId ,appVersion apiVersion appId ,增加一个开关? 是否需要监听什么类型的?
 export function initMonitor(options?: any) {
   const db = new DB("monitor");
-  // 引入 web worker 增强计算能力?
-  new Worker("../worker.js");
-
+  const dataQuene = new DataQuene();
+  // const DBRequest = await db.DBResolve();
+  workerMain();
   // 初始化 一些 data?
   const data = new Data({
     userId: "1345854620",
@@ -51,6 +55,7 @@ export function initMonitor(options?: any) {
       );
       useRequest(reqUrl);
     },
+    dataQuene,
   };
 
   // 相当于先把这些 patch的 function 拿出来
@@ -68,7 +73,7 @@ export function initMonitor(options?: any) {
   patchFunction.forEach((val) => {
     val(context);
   });
-
+  // patchError(context)
   beautifyConsole("[ MonitorSDK ]", "Starting Monitor");
 }
 

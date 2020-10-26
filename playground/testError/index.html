@@ -7,9 +7,13 @@
     <script src="../index.js"></script>
   </head>
   <body>
-   
+    <div id="button">ACACAA</div>
   </body>
 </html>
+<script>
+  console.warn("ACACACACCCACAA");
+</script>
+
 <script>
   throw new Error("AAAAAA");
   // var worker = new Worker("../testWorker.js")
@@ -20,8 +24,21 @@
 </script>
 
 <script>
-    new Promise((resolve,reject)=>{
-    throw new Error("CCCC")
-  })
+  new Promise((resolve, reject) => {
+    throw new Error("CCCC");
+  });
+  
 </script>
 <script src="./index.js"></script>
+<!-- <script>
+  Promise.reject("CCC");
+  window.addEventListener("unhandledrejection", (event) => {
+    console.log("unhandledrejection:" + event.reason); // 捕获后自定义处理
+  });
+</script> -->
+<script>
+ const button = document.querySelector("#button")
+ button.addEventListener("click",function(){
+   console.log("ACAAC")
+ })
+</script>

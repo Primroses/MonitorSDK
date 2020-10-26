@@ -17,7 +17,7 @@ export default {
     uglify(),
   ],
   input: "src/client/index.ts",
-  sourceMap: true,
+  // sourceMap: true,
   output: [
     // {
     //   file: "./dist/monitor.umd.js",
@@ -35,7 +35,6 @@ export default {
       file: "./playground/index.js",
       format: "umd",
       name: "index",
-      env: "production",
     },
     // {
     //   file: "./playground/index.cjs.js",
