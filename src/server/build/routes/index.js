@@ -14,6 +14,7 @@ const path_1 = __importDefault(require("path"));
 // 解决那个 Mime的问题
 router.get("/error/:jpg", async (ctx, next) => {
     const query = ctx.query;
+    console.log(query);
     const filePath = fs_1.default.readFileSync(path_1.default.join(__dirname, "../../src/public/images.jpg")); // 要返回一个对应的jpg
     if (query) {
         errorController_1.errorController(query);

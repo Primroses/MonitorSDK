@@ -1,5 +1,4 @@
-import { beautifyConsole } from "../utils/index";
-import { Data, ErrorData } from "./index";
+import { Data, ErrorData, TrackData } from "./index";
 interface TransactionList {
   (DB: IDBDatabase): void;
 }
@@ -43,6 +42,12 @@ export default class DB {
         // 这是创建字段 索引是方便 搜索吧?
         // objectStore.createIndex("error", "error", { unique: true });
       }
+      if (!currentDB.objectStoreNames.contains("track")) {
+        currentDB.createObjectStore("track", {
+          keyPath: "pathId",
+          autoIncrement: true,
+        });
+      }
     };
   }
 
@@ -55,7 +60,11 @@ export default class DB {
     });
   }
 
-  async add(DBRequest: IDBDatabase, tableName: string, data: Data) {
+  async add(
+    DBRequest: IDBDatabase,
+    tableName: string,
+    data: ErrorData | TrackData
+  ) {
     // 放在宏任务 里面 等待 出来? 感觉是不是有点 问题?
     // 感觉还是观察者模式 比较靠谱一些
     // 类似中间件类型的 写一个 函数 可以执行?
@@ -82,9 +91,11 @@ export default class DB {
 
     return new Promise((resolve, reject) => {
       request.addEventListener("success", function (event) {
+        // console.log("[IndexDB]", "Add Success");
         resolve(event);
       });
       request.addEventListener("error", function (event) {
+        // console.log("[IndexDB]", "Add failed");
         reject(event);
       });
     });
@@ -106,11 +117,11 @@ export default class DB {
     //     }
     //   };
     // });
-    const result: Data | ErrorData[] = [];
+    const result: ErrorData[] | TrackData[] = [];
     const objectStore = DBRequest.transaction([tableName]).objectStore(
       tableName
     );
-    return new Promise<ErrorData[]>((resolve, reject) => {
+    return new Promise<ErrorData[] | TrackData[]>((resolve, reject) => {
       objectStore
         .openCursor()
         .addEventListener("success", function (event: any) {

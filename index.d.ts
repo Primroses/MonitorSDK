@@ -60,3 +60,14 @@ type MainDataType =
 type HistoryFun = "pushState" | "replaceState";
 
 type AdaptorType = "ERROR" | "TRACK" | "PERFORMANCE" | "RESOURCE"; // 错误还是 路径 性能类型
+
+type OperatorType = "add" | "clear" | "read";
+
+interface sendData {
+  saveType: "store" | "indexDB";
+  data: {
+    [key: string]: any;
+  };
+}
+
+type SaveType = "store" | "indexDB";

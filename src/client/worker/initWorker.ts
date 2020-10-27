@@ -1,7 +1,9 @@
+import { Context, initMonitor } from "./../index";
 import Store from "../utils/storage";
-
-interface sendData {
-  type: "store" | "indexDB";
+import { Data } from "../data/index";
+interface sendWorkData {
+  operatorType: OperatorType;
+  tableName: string;
   data: {
     [key: string]: any;
   };
@@ -18,47 +20,60 @@ export class InitWorker {
     this.store = new Store();
   }
 
-  async sentMessageToWorker(data: sendData) {
-    const that = this;
-    return new Promise<boolean>((resolve, rejcet) => {
-      that.worker.postMessage(JSON.stringify(data));
-      resolve(true);
+  sentMessageToWorker(data: sendData) {
+    this.worker.postMessage(JSON.stringify(data));
+  }
+
+  acceptMessageFromWorker(
+    worker: InitWorker,
+    req: (data: Data, url: string) => void
+  ) {
+    this.worker.addEventListener("message", (message: MessageEvent) => {
+      // 日常石乐志
+      const { saveType, acceptLastVisited, data, success } = JSON.parse(
+        message.data
+      );
+      // 谁先谁后 监听到就行?
+      if (success) {
+        const LastVisited = worker.store.get("LastVisited");
+        worker.sentMessageToWorker({
+          saveType: "store",
+          data: { LastVisited },
+        });
+      }
+      if (saveType === "store") {
+        worker.store.set("LastVisited", acceptLastVisited);
+      } else if (saveType === "indexDB") {
+        // console.log("[Main accept IndexDB ]");
+        // req(data, "/error");
+      }
     });
+    this.worker.addEventListener("messageerror", (message: MessageEvent) => {});
   }
 
-  async acceptMessageFromWorker() {
-    const that = this;
-    return new Promise<any>((resolve, reject) => {
-      that.worker.addEventListener("message", (data: MessageEvent) => {
-        resolve(data.data);
-      });
-
-      that.worker.addEventListener("messageerror", (data: MessageEvent) => {
-        reject(data.data);
-      });
-    });
+  add(saveType: SaveType, data: sendWorkData) {
+    this.sentMessageToWorker({ saveType, data });
   }
 
-  add(type: "store" | "indexDB", data: any) {
-    this.sentMessageToWorker({ type, data });
+  read(saveType: SaveType, data: sendWorkData) {
+    this.sentMessageToWorker({ saveType, data });
   }
 
-  read(type: "store" | "indexDB", data: any) {
-    this.sentMessageToWorker({ type, data });
-  }
-
-  clear(type: "store" | "indexDB", data: any) {
-    this.sentMessageToWorker({ type, data });
+  clear(saveType: SaveType, data: sendWorkData) {
+    this.sentMessageToWorker({ saveType, data });
   }
 }
 
-export async function workerMain() {
-  const initWorker = new InitWorker();
-  const LastVisited = initWorker.store.get("LastVisited");
-  initWorker.sentMessageToWorker({ type: "store", data: { LastVisited } });
+export function workerMain(req: (data: Data, url: string) => void) {
+  const worker = new InitWorker();
+  worker.acceptMessageFromWorker(worker, req);
 
-  const {
-    LastVisited: acceptLastVisited,
-  } = await initWorker.acceptMessageFromWorker();
-  initWorker.store.set("LastVisited", acceptLastVisited);
+  // if (saveType === "store") {
+  //   context.worker.store.set("LastVisited", acceptLastVisited);
+  // } else if (saveType === "indexDB") {
+  //   console.log(data, "IndexDB");
+  // }
+  // 其实也不是不可以 因为 我不需要等 带它操作 我只需要拿到这个对象就可以了....
 }
+
+// 现在启动不能百分百启动

@@ -5,17 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Document</title>
     <script src="../index.js"></script>
+    <script>
+      window.index.initMonitor();
+    </script>
   </head>
   <body>
-    <div id="button">ACACAA</div>
+    <div id="button" class="A B C D">ACACAA</div>
   </body>
 </html>
-<script>
+<!-- <script>
   console.warn("ACACACACCCACAA");
-</script>
+</script> -->
 
 <script>
-  throw new Error("AAAAAA");
+  // throw new Error("AAAAAA");
   // var worker = new Worker("../testWorker.js")
   // worker.postMessage("hello Worker")
   // worker.addEventListener('message',function(e){
@@ -27,18 +30,17 @@
   new Promise((resolve, reject) => {
     throw new Error("CCCC");
   });
-  
 </script>
 <script src="./index.js"></script>
-<!-- <script>
-  Promise.reject("CCC");
-  window.addEventListener("unhandledrejection", (event) => {
-    console.log("unhandledrejection:" + event.reason); // 捕获后自定义处理
-  });
-</script> -->
 <script>
- const button = document.querySelector("#button")
- button.addEventListener("click",function(){
-   console.log("ACAAC")
- })
+  Promise.reject("CCC");
+  // window.addEventListener("unhandledrejection", (event) => {
+  //   console.log("unhandledrejection:" + event.reason); // 捕获后自定义处理
+  // });
+</script>
+<script>
+  const button = document.querySelector("#button");
+  button.addEventListener("click", function () {
+    console.log("ACAAC");
+  });
 </script>

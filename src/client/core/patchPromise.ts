@@ -11,12 +11,12 @@ export default function patchPromise(context: Context) {
     };
 
     const data: ErrorData = Object.assign(context.data(), {
-      timeStamp: new Date().toString(),
+      timeStamp: parseInt(new Date().toString()),
       mainType: "PROMISE",
-      data: params,
+      data: params.reason,
       pageInfo: getPageInfo(),
       currentUrl: window.location.href,
-      refererUrl: document.referrer, // 看下来源
+      refererUrl: document.referrer || "/", // 看下来源
     }); // 覆盖第一个参数
     console.log(data);
     // 操作数据库 (这种是不是应该马上上报呢?) 发生错误 应该直接上报

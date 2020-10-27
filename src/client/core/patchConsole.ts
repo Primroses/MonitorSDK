@@ -20,10 +20,14 @@ export default function patchConsole(context: Context) {
         data: params,
         pageInfo: getPageInfo(),
         currentUrl: window.location.href,
-        refererUrl: document.referrer, // 看下来源
+        refererUrl: document.referrer || "/", // 看下来源
       });
 
-      context.dataQuene.add("add", "error", data);
+      context.worker.add("indexDB", {
+        operatorType: "add",
+        tableName: "error",
+        data,
+      });
 
       return originConsoleFun.call(
         originConsoleFun,

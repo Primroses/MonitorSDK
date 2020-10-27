@@ -4,7 +4,7 @@ export class Data {
 
   trackId: string; // 错误发生过后的唯一标识该错误的Id
 
-  timeStamp?: string; // 当前发生错误时间的时间撮
+  timeStamp?: string | number; // 当前发生错误时间的时间撮
 
   // 需要两个类型进行 定位索引?
   mainType?: MainDataType; // 上报数据的类型(主要的)
@@ -51,10 +51,39 @@ interface ResourceError {
   resourceType: string;
   sourceUrl: string;
 }
+
+interface PromiseError {
+  reason: any;
+  timeStamp: number;
+}
+
 export class ErrorData extends Data {
-  data: Partial<Error> & Partial<ResourceError>;
+  data: Partial<Error> & Partial<ResourceError> & Partial<PromiseError>;
   constructor(options: ErrorData) {
     super(options);
     this.data = options.data;
+  }
+}
+
+interface Track {
+  trackType: string;
+  trackTarget: string;
+  trackPath: string;
+  trackContent: string;
+  offsetX: number;
+  offsetY: number;
+}
+
+export class TrackData extends Data {
+  data: Partial<Track>;
+  constructor(options: TrackData) {
+    super(options);
+    this.data = options.data;
+    // this.trackType = options.trackType;
+    // this.trackTarget = options.trackTarget;
+    // this.trackPath = options.trackPath;
+    // this.trackContent = options.trackContent;
+    // this.offsetX = options.offsetX;
+    // this.offsetY = options.offsetY;
   }
 }

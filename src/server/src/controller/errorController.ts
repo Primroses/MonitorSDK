@@ -119,8 +119,8 @@ export async function errorController(data: ErrorData) {
       '${trackId}',
       '${filename}',
       '${lineno}',
-      '${message}',
-      '${stack}'
+      "${message}",
+      "${stack}"
     )`;
   } else if (mainType === "RESOURCE") {
     sql = `insert into error(
@@ -199,10 +199,10 @@ export async function errorController(data: ErrorData) {
       '${refererUrl}',
       '${timeStamp}',
       '${trackId}',
-      '${reason}'
+      "${reason}"
     )
     `;
   }
-  // console.log(sql);
-  await useQuery(sql);
+  console.log(sql);
+  // await useQuery(sql);
 }

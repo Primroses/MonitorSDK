@@ -5,8 +5,6 @@ export default class Store {
     localStorage.removeItem(key);
   }
   set(key: string, value: string) {
-    // const currentValue = localStorage.getItem("key")
-    // if(currentValue){}
     localStorage.setItem(key, value);
   }
   get(key: string) {

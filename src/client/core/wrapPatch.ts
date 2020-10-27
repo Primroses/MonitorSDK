@@ -22,22 +22,27 @@ export default async function warpPatch(context: Context) {
         // });
         return func.apply(this, args);
       } catch (e) {
-        const data: ErrorData = Object.assign(context.data(), {
-          timeStamp: new Date().toString(),
-          mainType: "EVENTLISTENER",
-          data: e,
-          pageInfo: getPageInfo(),
-          currentUrl: window.location.href,
-          refererUrl: document.referrer, // 看下来源
-          eventType: e.name,
-        }); // 覆盖第一个参数
+        // console.dir(e);
+        if (e) {
+          const data: ErrorData = Object.assign(context.data(), {
+            timeStamp: new Date().toString(),
+            mainType: "EVENTLISTENER",
+            data: {
+              message: e.message,
+              stack: e.stack,
+            },
+            pageInfo: getPageInfo(),
+            currentUrl: window.location.href,
+            refererUrl: document.referrer || "/", // 看下来源
+            eventType: e.name,
+          }); // 覆盖第一个参数
 
-        // 这些数据需要先过滤 在发
-        // context.dataQuene.add((DBRequest) =>
-        //   context.db.add(DBRequest, "error", data)
-        // );
-
-        context.dataQuene.add("add", "error", data);
+          context.worker.add("indexDB", {
+            operatorType: "add",
+            tableName: "error",
+            data,
+          });
+        }
       }
     };
     return nativeWindowEventListener.call(this, type, wrappedFunc, options); // 调用原生的方法，保证addEventListener正确执行

@@ -1,7 +1,5 @@
 import DB from "../data/dataBase";
-import { ErrorData } from "../data/index";
-
-type DBOpreatorKeys = "add" | "clear" | "read";
+import { ErrorData, TrackData } from "../data/index";
 
 // 这里是做数据清洗的 因为可能会多次触发同一次事件
 
@@ -36,15 +34,16 @@ async function cleanTableData(DBRequest: IDBDatabase, tableName: string) {
   let data = await db.read(DBRequest, tableName); // 先读表
 
   await db.clear(DBRequest, tableName); // 然后清除表
+  console.log("[Cleaned Table " + tableName + " ]");
   // 定时清理 但是 应该要的是LRU 才对的 翻转过来 的 LRU 好像有点扯?
   // 这种错误 直接过滤成
-  const retData: ErrorData[] = [];
+  const retData: ErrorData[] & TrackData[] = [];
   const stackSet = new Set<string>();
   if (tableName === "error") {
     // const retIndex: number[] = []; // 本来还想记录一下 index 值的 这里需要考虑一下 记不记录
     for (let error of data) {
       // 拿到关键的 对比
-      const { message } = error.data;
+      const { message } = (error as ErrorData).data;
       if (!stackSet.has(message.trim())) {
         stackSet.add(message.trim());
       }
@@ -53,57 +52,85 @@ async function cleanTableData(DBRequest: IDBDatabase, tableName: string) {
     // LRU的目的是 将最后出现的那个 留下来 ，就是这个时间内 这个bug 还是出现的 这个错误仍然存在
     for (let message of stackSet) {
       retData.push(
-        data.filter((val) => message === val.data.message.trim()).pop()
+        (data as ErrorData[])
+          .filter((val: ErrorData) => message === val.data.message.trim())
+          .pop()
       );
     }
-    for (let data of retData) {
-      db.add(DBRequest, tableName, data); // 把LRU的数据再添加进去
-    }
+    // 清理完是不是应该要发送一波请求呢?
     // LRU 过后 得同步 找到对应 index 值 删掉 其中的 不要全部删掉?
+  } else if (tableName === "track") {
+    for (let track of data) {
+      // 拿到关键的 对比
+      const { trackTarget } = (track as TrackData).data;
+      if (!stackSet.has(trackTarget.trim())) {
+        stackSet.add(trackTarget.trim());
+      }
+    }
+    for (let message of stackSet) {
+      retData.push(
+        (data as TrackData[])
+          .filter((val: TrackData) => message === val.data.trackTarget.trim())
+          .pop()
+      );
+    }
   }
-  // 日常没找到 标点符号 .....
+  for (let data of retData) {
+    // 到底还要不要添加?
+    db.add(DBRequest, tableName, data); // 把LRU的数据再添加进去
+    postMessage(JSON.stringify({ saveType: "indexDB", data }));
+  }
 }
 
 // 启动 worker
-async function startWorker() {
-  const DBRequest = await db.DBResolve();
-  const cleanTables: string[] = ["error"];
-  // beautifyConsole("[Monitor SDK]", "worker启动");
-  for (let i = 0; i < cleanTables.length; i++) {
-    // for 循环 不会并行 而是串行?
-    cleanTableData(DBRequest, cleanTables[i]);
-  }
+async function startWorker(DBRequest: IDBDatabase) {
+  // const DBRequest = await db.DBResolve();
+  const cleanTables: string[] = ["error", "track"];
+  return new Promise((resolve) => {
+    console.log("[Worker]", "worker启动");
+    for (let i = 0; i < cleanTables.length; i++) {
+      // for 循环 不会并行 而是串行?
+      cleanTableData(DBRequest, cleanTables[i]);
+    }
+    resolve(true);
+  });
 }
 
 // 前端定时任务? 是不是得 通过localstroage 来实现呢? 而且还是不太标准的定时任务?
 // 不可能每天都打开你的 网页吧? 还是得hack 一手
-
+// startWorker();
 // main 入口
+// worker 是主要的桥梁 跟 indexDB 做交互的
+
 async function main() {
   const DBRequest = await db.DBResolve();
-
   const TIMEGAP = 1000 * 60 * 60 * 24; // 一天差距
+  const currentVisited = new Date().getTime();
+  // 这里得调整一下 因为 有一个异步的原因 。当你的异步回来以后 可能后面的没有监听到 或者是没有执行 就比较拉胯
+  // 这里得有一个 message的队列操作才行。
 
-  self.addEventListener("message", function (message) {
-    const { type, data } = JSON.parse(message.data);
-    console.log(data.LastVisited, "LastVisited");
-
-    const currentVisited = new Date().getTime();
-    // 第一次 或者是 被人错手删掉了 LastTime
-    if (type === "store") {
+  // 最后通过事件的方法 通知以后再开始 start
+  postMessage(JSON.stringify({ success: "OK" }));
+  // 最后发现 异步队列的问题就是 不知道谁先谁后的问题 ，双线程 有一个 先后顺序
+  // 如何保证 谁先谁后
+  self.addEventListener("message", async function (message) {
+    const { saveType, data } = JSON.parse(message.data);
+    console.log(saveType, data);
+    if (saveType === "store") {
+      // 够时间了 就开一手 hack 定时任务
+      startWorker(DBRequest);
       if (
         !data.LastVisited ||
         currentVisited - parseInt(data.LastVisited) > TIMEGAP
       ) {
-        // 够时间了 就开一手 hack 定时任务
-        startWorker();
         // 顺便记录一下时间
-        postMessage(JSON.stringify({ LastVisited: currentVisited }));
+        postMessage(
+          JSON.stringify({ saveType: "store", LastVisited: currentVisited })
+        );
       }
-    } else if (type === "indexDB") {
-      const { operator } = data;
-      const operatorFun = db[operator as DBOpreatorKeys];
-      operatorFun(DBRequest, data.tableName, data.data);
+    } else if (saveType === "indexDB") {
+      const { operatorType, tableName } = data;
+      db[operatorType as OperatorType](DBRequest, tableName, data.data);
     }
   });
 }

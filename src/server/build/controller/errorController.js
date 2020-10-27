@@ -1,7 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.errorController = void 0;
-const collection_1 = require("../middleware/collection");
 async function errorController(data) {
     const { appId, userId, apiVersion, appVersion, currentUrl, ua, type, os, mainType, pageHeight, pageWidth, screenHeight, screenWidth, refererUrl, timeStamp, trackId, lineno, filename, message, stack, resourceType, sourceUrl, reason, } = data;
     let sql;
@@ -45,8 +44,8 @@ async function errorController(data) {
       '${trackId}',
       '${filename}',
       '${lineno}',
-      '${message}',
-      '${stack}'
+      "${message}",
+      "${stack}"
     )`;
     }
     else if (mainType === "RESOURCE") {
@@ -127,11 +126,11 @@ async function errorController(data) {
       '${refererUrl}',
       '${timeStamp}',
       '${trackId}',
-      '${reason}'
+      "${reason}"
     )
     `;
     }
-    // console.log(sql);
-    await collection_1.useQuery(sql);
+    console.log(sql);
+    // await useQuery(sql);
 }
 exports.errorController = errorController;
