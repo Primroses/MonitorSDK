@@ -14,7 +14,6 @@ type DataKey = keyof Data;
 // 默认是传 data
 export function getRequsetUrl(data: Data, url: string): string {
   let dataStr = url + "/abc.jpg" + "?" + "";
-
   function getDataStr(currentData: Data) {
     Object.keys(currentData).forEach((val: DataKey) => {
       if (
@@ -27,7 +26,6 @@ export function getRequsetUrl(data: Data, url: string): string {
     });
   }
   getDataStr(data);
-
   dataStr = dataStr.substring(dataStr.lastIndexOf("&"), -1);
   return dataStr;
 }

@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.errorController = void 0;
+const collection_1 = require("../middleware/collection");
 async function errorController(data) {
     const { appId, userId, apiVersion, appVersion, currentUrl, ua, type, os, mainType, pageHeight, pageWidth, screenHeight, screenWidth, refererUrl, timeStamp, trackId, lineno, filename, message, stack, resourceType, sourceUrl, reason, } = data;
     let sql;
@@ -44,8 +45,8 @@ async function errorController(data) {
       '${trackId}',
       '${filename}',
       '${lineno}',
-      "${message}",
-      "${stack}"
+      "${message.trim()}",
+      "${stack.trim()}"
     )`;
     }
     else if (mainType === "RESOURCE") {
@@ -126,11 +127,91 @@ async function errorController(data) {
       '${refererUrl}',
       '${timeStamp}',
       '${trackId}',
-      "${reason}"
+      "${reason.trim()}"
     )
     `;
     }
-    console.log(sql);
-    // await useQuery(sql);
+    else if (mainType === "EVENTLISTENER") {
+        sql = `insert into error(appId,
+      userId,
+      apiVersion,
+      appVersion,
+      currentUrl,
+      ua,
+      type,
+      os,
+      mainType,
+      pageHeight,
+      pageWidth,
+      screenHeight,
+      screenWidth,
+      refererUrl,
+      timeStamp,
+      trackId,
+      message,
+      stack ) values (
+      '${appId}',
+      '${userId}',
+      '${apiVersion}',
+      '${appVersion}',
+      '${currentUrl}',
+      '${ua}',
+      '${type}',
+      '${os}',
+      '${mainType}',
+      '${pageHeight}',
+      '${pageWidth}',
+      '${screenHeight}',
+      '${screenWidth}',
+      '${refererUrl}',
+      '${timeStamp}',
+      '${trackId}',
+      "${message.trim()}",
+      "${stack.trim()}"
+    )`;
+    }
+    else if (mainType === "CONSOLE") {
+        sql = `insert into error(appId,
+      userId,
+      apiVersion,
+      appVersion,
+      currentUrl,
+      ua,
+      type,
+      os,
+      mainType,
+      pageHeight,
+      pageWidth,
+      screenHeight,
+      screenWidth,
+      refererUrl,
+      timeStamp,
+      trackId,
+      message) values (
+      '${appId}',
+      '${userId}',
+      '${apiVersion}',
+      '${appVersion}',
+      '${currentUrl}',
+      '${ua}',
+      '${type}',
+      '${os}',
+      '${mainType}',
+      '${pageHeight}',
+      '${pageWidth}',
+      '${screenHeight}',
+      '${screenWidth}',
+      '${refererUrl}',
+      '${timeStamp}',
+      '${trackId}',
+      "${message.trim()}"
+    )`;
+    }
+    try {
+        await collection_1.useQuery(sql);
+    }
+    catch (error) {
+        console.log(error);
+    }
 }
 exports.errorController = errorController;

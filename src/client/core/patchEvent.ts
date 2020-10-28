@@ -39,13 +39,12 @@ export default function patchEvent(context: Context) {
     } else if (!id && !className) {
       return `${tagName.toLowerCase()}`;
     }
-    return `${tagName.toLowerCase()}#${id}.${className.split(" ").join(".")}`;
+    return `[${tagName.toLowerCase()}][id=${id}][class=${className.split(" ")}]`;
   };
 
   eventMaps.forEach((val) => {
     window.addEventListener(val, (e: any) => {
       const { tagName, id, className, outerHTML } = e.target;
-      console.log(tagName, tagName === "html", "tagName");
       if (tagName != "HTML") {
         const params = {
           trackTarget: trackTarget(tagName, id, className),
@@ -64,11 +63,11 @@ export default function patchEvent(context: Context) {
           refererUrl: document.referrer ||  "/", // 看下来源
         });
 
-        // context.worker.add("indexDB", {
-        //   operatorType: "add",
-        //   tableName: "track",
-        //   data,
-        // });
+        context.worker.add("indexDB", {
+          operatorType: "add",
+          tableName: "track",
+          data,
+        });
       }
     });
   }, true);

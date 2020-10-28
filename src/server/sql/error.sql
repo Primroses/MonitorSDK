@@ -41,8 +41,8 @@ CREATE TABLE `error` (
   `sourceUrl` varchar(50) DEFAULT NULL,
   `filename` varchar(50) DEFAULT NULL,
   `lineno` varchar(50) DEFAULT NULL,
-  `message` varchar(50) DEFAULT NULL,
-  `stack` varchar(50) DEFAULT NULL,
+  `message` varchar(255) DEFAULT NULL,
+  `stack` varchar(255) DEFAULT NULL,
   `reason` varchar(225) DEFAULT NULL,
   PRIMARY KEY (`errorId`)
 ) ENGINE=InnoDB AUTO_INCREMENT=84 DEFAULT CHARSET=utf8;

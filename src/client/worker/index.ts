@@ -39,7 +39,7 @@ async function cleanTableData(DBRequest: IDBDatabase, tableName: string) {
   // 这种错误 直接过滤成
   const retData: ErrorData[] & TrackData[] = [];
   const stackSet = new Set<string>();
-  if (tableName === "error") {
+  if (tableName === "error" && data.length) {
     // const retIndex: number[] = []; // 本来还想记录一下 index 值的 这里需要考虑一下 记不记录
     for (let error of data) {
       // 拿到关键的 对比
@@ -61,16 +61,30 @@ async function cleanTableData(DBRequest: IDBDatabase, tableName: string) {
     // LRU 过后 得同步 找到对应 index 值 删掉 其中的 不要全部删掉?
   } else if (tableName === "track") {
     for (let track of data) {
-      // 拿到关键的 对比
-      const { trackTarget } = (track as TrackData).data;
-      if (!stackSet.has(trackTarget.trim())) {
-        stackSet.add(trackTarget.trim());
+      if (track.mainType === "REQUEST") {
+        // 拿到关键的 对比
+        const { url } = (track as TrackData).data;
+        if (!stackSet.has(url.trim())) {
+          stackSet.add(url.trim());
+        }
+      } else {
+        // 拿到关键的 对比
+        const { trackTarget } = (track as TrackData).data;
+        if (!stackSet.has(trackTarget.trim())) {
+          stackSet.add(trackTarget.trim());
+        }
       }
     }
-    for (let message of stackSet) {
+    for (let el of stackSet) {
       retData.push(
         (data as TrackData[])
-          .filter((val: TrackData) => message === val.data.trackTarget.trim())
+          .filter((val: TrackData) => {
+            if (val.mainType === "REQUEST") {
+              return el === val.data.url;
+            } else {
+              return el === val.data.trackTarget;
+            }
+          })
           .pop()
       );
     }
@@ -78,7 +92,7 @@ async function cleanTableData(DBRequest: IDBDatabase, tableName: string) {
   for (let data of retData) {
     // 到底还要不要添加?
     db.add(DBRequest, tableName, data); // 把LRU的数据再添加进去
-    postMessage(JSON.stringify({ saveType: "indexDB", data }));
+    postMessage(JSON.stringify({ saveType: "indexDB", data, tableName }));
   }
 }
 
@@ -105,7 +119,7 @@ async function startWorker(DBRequest: IDBDatabase) {
 async function main() {
   const DBRequest = await db.DBResolve();
   const TIMEGAP = 1000 * 60 * 60 * 24; // 一天差距
-  const currentVisited = new Date().getTime();
+
   // 这里得调整一下 因为 有一个异步的原因 。当你的异步回来以后 可能后面的没有监听到 或者是没有执行 就比较拉胯
   // 这里得有一个 message的队列操作才行。
 
@@ -114,22 +128,27 @@ async function main() {
   // 最后发现 异步队列的问题就是 不知道谁先谁后的问题 ，双线程 有一个 先后顺序
   // 如何保证 谁先谁后
   self.addEventListener("message", async function (message) {
+    const currentVisited = new Date().getTime();
     const { saveType, data } = JSON.parse(message.data);
     console.log(saveType, data);
     if (saveType === "store") {
       // 够时间了 就开一手 hack 定时任务
       startWorker(DBRequest);
       if (
-        !data.LastVisited ||
+        data.LastVisited === "undefined" ||
         currentVisited - parseInt(data.LastVisited) > TIMEGAP
       ) {
         // 顺便记录一下时间
         postMessage(
-          JSON.stringify({ saveType: "store", LastVisited: currentVisited })
+          JSON.stringify({
+            saveType: "store",
+            acceptLastVisited: currentVisited,
+          })
         );
       }
     } else if (saveType === "indexDB") {
       const { operatorType, tableName } = data;
+      console.log(operatorType, tableName, "indexDB");
       db[operatorType as OperatorType](DBRequest, tableName, data.data);
     }
   });

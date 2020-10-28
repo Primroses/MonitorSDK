@@ -34,10 +34,12 @@ CREATE TABLE `track` (
   `pageWidth` int(11) DEFAULT NULL,
   `screenHeight` int(11) DEFAULT NULL,
   `screenWidth` int(11) DEFAULT NULL,
+  `refererUrl` varchar(50) DEFAULT NULL,
+  `timeStamp` varchar(50) DEFAULT NULL,
   `trackType` varchar(11) DEFAULT NULL,
   `trackTarget` varchar(50) DEFAULT NULL,
   `offsetX` int(11) DEFAULT NULL,
   `offsetY` int(11) DEFAULT NULL,
-  `targetContent` varchar(255) DEFAULT NULL,
+  `trackContent` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`trackId`)
 ) ENGINE=InnoDB AUTO_INCREMENT=84 DEFAULT CHARSET=utf8;

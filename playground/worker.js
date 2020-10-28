@@ -163,7 +163,7 @@
     var db = new DB("monitor");
     function cleanTableData(DBRequest, tableName) {
         return __awaiter(this, void 0, void 0, function () {
-            var data, retData, stackSet, data_1, data_1_1, error, message, _loop_1, stackSet_1, stackSet_1_1, message, data_2, data_2_1, track, trackTarget, _loop_2, stackSet_2, stackSet_2_1, message, retData_1, retData_1_1, data_3;
+            var data, retData, stackSet, data_1, data_1_1, error, message, _loop_1, stackSet_1, stackSet_1_1, message, data_2, data_2_1, track, url, trackTarget, _loop_2, stackSet_2, stackSet_2_1, el, retData_1, retData_1_1, data_3;
             var e_1, _a, e_2, _b, e_3, _c, e_4, _d, e_5, _e;
             return __generator(this, function (_f) {
                 switch (_f.label) {
@@ -176,7 +176,7 @@
                         console.log("[Cleaned Table " + tableName + " ]");
                         retData = [];
                         stackSet = new Set();
-                        if (tableName === "error") {
+                        if (tableName === "error" && data.length) {
                             try {
                                 for (data_1 = __values(data), data_1_1 = data_1.next(); !data_1_1.done; data_1_1 = data_1.next()) {
                                     error = data_1_1.value;
@@ -216,9 +216,17 @@
                             try {
                                 for (data_2 = __values(data), data_2_1 = data_2.next(); !data_2_1.done; data_2_1 = data_2.next()) {
                                     track = data_2_1.value;
-                                    trackTarget = track.data.trackTarget;
-                                    if (!stackSet.has(trackTarget.trim())) {
-                                        stackSet.add(trackTarget.trim());
+                                    if (track.mainType === "REQUEST") {
+                                        url = track.data.url;
+                                        if (!stackSet.has(url.trim())) {
+                                            stackSet.add(url.trim());
+                                        }
+                                    }
+                                    else {
+                                        trackTarget = track.data.trackTarget;
+                                        if (!stackSet.has(trackTarget.trim())) {
+                                            stackSet.add(trackTarget.trim());
+                                        }
                                     }
                                 }
                             }
@@ -229,15 +237,23 @@
                                 }
                                 finally { if (e_3) throw e_3.error; }
                             }
-                            _loop_2 = function (message) {
+                            console.log(retData);
+                            _loop_2 = function (el) {
                                 retData.push(data
-                                    .filter(function (val) { return message === val.data.trackTarget.trim(); })
+                                    .filter(function (val) {
+                                    if (val.mainType === "REQUEST") {
+                                        return el === val.data.url;
+                                    }
+                                    else {
+                                        return el === val.data.trackTarget;
+                                    }
+                                })
                                     .pop());
                             };
                             try {
                                 for (stackSet_2 = __values(stackSet), stackSet_2_1 = stackSet_2.next(); !stackSet_2_1.done; stackSet_2_1 = stackSet_2.next()) {
-                                    message = stackSet_2_1.value;
-                                    _loop_2(message);
+                                    el = stackSet_2_1.value;
+                                    _loop_2(el);
                                 }
                             }
                             catch (e_4_1) { e_4 = { error: e_4_1 }; }
@@ -252,7 +268,7 @@
                             for (retData_1 = __values(retData), retData_1_1 = retData_1.next(); !retData_1_1.done; retData_1_1 = retData_1.next()) {
                                 data_3 = retData_1_1.value;
                                 db.add(DBRequest, tableName, data_3);
-                                postMessage(JSON.stringify({ saveType: "indexDB", data: data_3 }));
+                                postMessage(JSON.stringify({ saveType: "indexDB", data: data_3, tableName: tableName }));
                             }
                         }
                         catch (e_5_1) { e_5 = { error: e_5_1 }; }
@@ -284,30 +300,34 @@
     }
     function main() {
         return __awaiter(this, void 0, void 0, function () {
-            var DBRequest, TIMEGAP, currentVisited;
+            var DBRequest, TIMEGAP;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0: return [4, db.DBResolve()];
                     case 1:
                         DBRequest = _a.sent();
                         TIMEGAP = 1000 * 60 * 60 * 24;
-                        currentVisited = new Date().getTime();
                         postMessage(JSON.stringify({ success: "OK" }));
                         self.addEventListener("message", function (message) {
                             return __awaiter(this, void 0, void 0, function () {
-                                var _a, saveType, data, operatorType, tableName;
+                                var currentVisited, _a, saveType, data, operatorType, tableName;
                                 return __generator(this, function (_b) {
+                                    currentVisited = new Date().getTime();
                                     _a = JSON.parse(message.data), saveType = _a.saveType, data = _a.data;
                                     console.log(saveType, data);
                                     if (saveType === "store") {
                                         startWorker(DBRequest);
-                                        if (!data.LastVisited ||
+                                        if (data.LastVisited === "undefined" ||
                                             currentVisited - parseInt(data.LastVisited) > TIMEGAP) {
-                                            postMessage(JSON.stringify({ saveType: "store", LastVisited: currentVisited }));
+                                            postMessage(JSON.stringify({
+                                                saveType: "store",
+                                                acceptLastVisited: currentVisited,
+                                            }));
                                         }
                                     }
                                     else if (saveType === "indexDB") {
                                         operatorType = data.operatorType, tableName = data.tableName;
+                                        console.log(operatorType, tableName, "indexDB");
                                         db[operatorType](DBRequest, tableName, data.data);
                                     }
                                     return [2];

@@ -72,6 +72,9 @@ interface Track {
   trackContent: string;
   offsetX: number;
   offsetY: number;
+  url:string;
+  method:string;
+  body:any;
 }
 
 export class TrackData extends Data {

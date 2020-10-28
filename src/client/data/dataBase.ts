@@ -42,6 +42,7 @@ export default class DB {
         // 这是创建字段 索引是方便 搜索吧?
         // objectStore.createIndex("error", "error", { unique: true });
       }
+      // track 也不是不行 记录的是这个人的 所操作的应用的过程
       if (!currentDB.objectStoreNames.contains("track")) {
         currentDB.createObjectStore("track", {
           keyPath: "pathId",

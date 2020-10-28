@@ -15,7 +15,10 @@ interface ErrorData {
     | "RESOURCE"
     | "TRACK"
     | "EVENT"
-    | "PERFORMANCE"; // 上报数据的类型(主要的)
+    | "PERFORMANCE"
+    | "EVENTLISTENER"
+    | "CONSOLE"
+    ; // 上报数据的类型(主要的)
 
   // private minorType:MinorDataType; // 次要类型
 
@@ -119,8 +122,8 @@ export async function errorController(data: ErrorData) {
       '${trackId}',
       '${filename}',
       '${lineno}',
-      "${message}",
-      "${stack}"
+      "${message.trim()}",
+      "${stack.trim()}"
     )`;
   } else if (mainType === "RESOURCE") {
     sql = `insert into error(
@@ -199,10 +202,87 @@ export async function errorController(data: ErrorData) {
       '${refererUrl}',
       '${timeStamp}',
       '${trackId}',
-      "${reason}"
+      "${reason.trim()}"
     )
     `;
+  }else if(mainType === "EVENTLISTENER"){
+    sql = `insert into error(appId,
+      userId,
+      apiVersion,
+      appVersion,
+      currentUrl,
+      ua,
+      type,
+      os,
+      mainType,
+      pageHeight,
+      pageWidth,
+      screenHeight,
+      screenWidth,
+      refererUrl,
+      timeStamp,
+      trackId,
+      message,
+      stack ) values (
+      '${appId}',
+      '${userId}',
+      '${apiVersion}',
+      '${appVersion}',
+      '${currentUrl}',
+      '${ua}',
+      '${type}',
+      '${os}',
+      '${mainType}',
+      '${pageHeight}',
+      '${pageWidth}',
+      '${screenHeight}',
+      '${screenWidth}',
+      '${refererUrl}',
+      '${timeStamp}',
+      '${trackId}',
+      "${message.trim()}",
+      "${stack.trim()}"
+    )`;
+  }else if(mainType === "CONSOLE"){
+    sql = `insert into error(appId,
+      userId,
+      apiVersion,
+      appVersion,
+      currentUrl,
+      ua,
+      type,
+      os,
+      mainType,
+      pageHeight,
+      pageWidth,
+      screenHeight,
+      screenWidth,
+      refererUrl,
+      timeStamp,
+      trackId,
+      message) values (
+      '${appId}',
+      '${userId}',
+      '${apiVersion}',
+      '${appVersion}',
+      '${currentUrl}',
+      '${ua}',
+      '${type}',
+      '${os}',
+      '${mainType}',
+      '${pageHeight}',
+      '${pageWidth}',
+      '${screenHeight}',
+      '${screenWidth}',
+      '${refererUrl}',
+      '${timeStamp}',
+      '${trackId}',
+      "${message.trim()}"
+    )`;
   }
-  console.log(sql);
-  // await useQuery(sql);
+  try {
+    await useQuery(sql);
+  } catch (error) {
+    console.log(error)
+  }
 }

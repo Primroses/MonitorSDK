@@ -306,7 +306,7 @@
                 currentUrl: window.location.href,
                 refererUrl: document.referrer || "/",
             });
-            context.request(data, "/error");
+            context.request(__assign(__assign({}, data), { tableName: "error" }), "/error");
         }, true);
     }
 
@@ -325,12 +325,11 @@
             else if (!id && !className) {
                 return "" + tagName.toLowerCase();
             }
-            return tagName.toLowerCase() + "#" + id + "." + className.split(" ").join(".");
+            return "[" + tagName.toLowerCase() + "][id=" + id + "][class=" + className.split(" ") + "]";
         };
         eventMaps.forEach(function (val) {
             window.addEventListener(val, function (e) {
                 var _a = e.target, tagName = _a.tagName, id = _a.id, className = _a.className, outerHTML = _a.outerHTML;
-                console.log(tagName, tagName === "html", "tagName");
                 if (tagName != "HTML") {
                     var params = {
                         trackTarget: trackTarget(tagName, id, className),
@@ -347,6 +346,11 @@
                         currentUrl: window.location.href,
                         refererUrl: document.referrer || "/",
                     });
+                    context.worker.add("indexDB", {
+                        operatorType: "add",
+                        tableName: "track",
+                        data: data,
+                    });
                 }
             });
         }, true);
@@ -354,26 +358,62 @@
 
     function patchPromise(context) {
         window.addEventListener("unhandledrejection", function (e) {
-            var reason = e.reason, timeStamp = e.timeStamp;
+            var reason = e.reason;
             var params = {
                 reason: reason,
-                timeStamp: timeStamp,
             };
             var data = Object.assign(context.data(), {
-                timeStamp: parseInt(new Date().toString()),
+                timeStamp: new Date(),
                 mainType: "PROMISE",
-                data: params.reason,
+                data: {
+                    reason: params.reason,
+                },
+                pageInfo: getPageInfo(),
+                currentUrl: window.location.href,
+                refererUrl: document.referrer || "/",
+            });
+            context.request(__assign(__assign({}, data), { tableName: "error" }), "/error");
+        });
+    }
+
+    function patchRequest(context) {
+        patchAjax(context);
+    }
+    function patchAjax(context) {
+        var filterUrl = ["login", "register"];
+        var currentTime = 0;
+        var dataMap = new Map();
+        var originOpen = XMLHttpRequest.prototype.open;
+        var originSend = XMLHttpRequest.prototype.send;
+        XMLHttpRequest.prototype.open = function (method, url) {
+            if (filterUrl.indexOf(url) < 0) {
+                var params = {
+                    method: method,
+                    url: url,
+                };
+                dataMap.set(currentTime, params);
+            }
+            return originOpen && originOpen.call(this, method, url);
+        };
+        XMLHttpRequest.prototype.send = function (body) {
+            var params = dataMap.get(currentTime);
+            var data = Object.assign(context.data(), {
+                timeStamp: new Date(),
+                mainType: "REQUEST",
+                data: __assign(__assign({}, params), { body: body }),
                 pageInfo: getPageInfo(),
                 currentUrl: window.location.href,
                 refererUrl: document.referrer || "/",
             });
             console.log(data);
-            context.request(data, "/error");
-            throw new Error("Test Promised");
-        });
-    }
-
-    function patchRequest(context) {
+            context.worker.add("indexDB", {
+                operatorType: "add",
+                tableName: "track",
+                data: data,
+            });
+            currentTime += 1;
+            return originSend && originSend.call(this, body);
+        };
     }
 
     function patchRoute(context) {
@@ -596,8 +636,9 @@
             this.worker.postMessage(JSON.stringify(data));
         };
         InitWorker.prototype.acceptMessageFromWorker = function (worker, req) {
+            var that = this;
             this.worker.addEventListener("message", function (message) {
-                var _a = JSON.parse(message.data), saveType = _a.saveType, acceptLastVisited = _a.acceptLastVisited, data = _a.data, success = _a.success;
+                var _a = JSON.parse(message.data), saveType = _a.saveType, acceptLastVisited = _a.acceptLastVisited, data = _a.data, success = _a.success, tableName = _a.tableName;
                 if (success) {
                     var LastVisited = worker.store.get("LastVisited");
                     worker.sentMessageToWorker({
@@ -606,10 +647,10 @@
                     });
                 }
                 if (saveType === "store") {
-                    worker.store.set("LastVisited", acceptLastVisited);
+                    that.store.set("LastVisited", acceptLastVisited);
                 }
                 else if (saveType === "indexDB") {
-                    req(data, "/error");
+                    req(__assign(__assign({}, data), { tableName: tableName }), "/error");
                 }
             });
             this.worker.addEventListener("messageerror", function (message) { });
@@ -665,7 +706,7 @@
             patchRoute,
         ];
         for (var i = 0; i < patchFunction.length; i++) {
-            warpPatch(context);
+            patchFunction[i](context);
         }
         beautifyConsole("[ MonitorSDK ]", "Starting Monitor");
     }

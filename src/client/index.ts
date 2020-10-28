@@ -18,7 +18,7 @@ import { InitWorker, workerMain } from "./worker/initWorker";
 export interface Context {
   db: DB;
   data: () => Data | ErrorData | TrackData; // 工厂函数
-  request: (data: Data, url: string) => void;
+  request: (data: Data & { tableName: string }, url: string) => void;
   // dataQuene: DataQuene;
   worker: InitWorker;
 }
@@ -74,11 +74,8 @@ export function initMonitor(options?: any) {
     patchRoute,
   ];
 
-  // patchFunction.forEach((val) => {
-  //   val(context);
-  // });
   for (let i = 0; i < patchFunction.length; i++) {
-    warpPatch(context);
+    patchFunction[i](context);
   }
 
   // patchError(context)

@@ -13,12 +13,12 @@
     <div id="button" class="A B C D">ACACAA</div>
   </body>
 </html>
-<!-- <script>
+<script>
   console.warn("ACACACACCCACAA");
-</script> -->
+</script>
 
 <script>
-  // throw new Error("AAAAAA");
+  throw new Error("AAAAAA");
   // var worker = new Worker("../testWorker.js")
   // worker.postMessage("hello Worker")
   // worker.addEventListener('message',function(e){
@@ -42,5 +42,25 @@
   const button = document.querySelector("#button");
   button.addEventListener("click", function () {
     console.log("ACAAC");
+  });
+  function getJSON(url) {
+    return new Promise((resolve, reject) => {
+      var xhr = new XMLHttpRequest();
+      xhr.open("GET", url, true);
+      xhr.onreadystatechange = function () {
+        if (this.readyState === 4) {
+          if (this.status === 200) {
+            resolve(this.responseText, this);
+          } else {
+            var resJson = { code: this.status, response: this.response };
+            reject(resJson, this);
+          }
+        }
+      };
+      xhr.send();
+    });
+  }
+  getJSON("http://test.xiangyou.ouj.com:5000/test").then((data) => {
+    console.log("get" + data);
   });
 </script>

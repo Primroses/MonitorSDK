@@ -55,6 +55,7 @@ type MainDataType =
   | "PERFORMANCE"
   | "EVENTLISTENER"
   | "CONSOLE"
+  | "REQUEST"
 
 // History的方法
 type HistoryFun = "pushState" | "replaceState";
