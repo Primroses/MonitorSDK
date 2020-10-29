@@ -38,8 +38,15 @@ CREATE TABLE `track` (
   `timeStamp` varchar(50) DEFAULT NULL,
   `trackType` varchar(11) DEFAULT NULL,
   `trackTarget` varchar(50) DEFAULT NULL,
-  `offsetX` int(11) DEFAULT NULL,
-  `offsetY` int(11) DEFAULT NULL,
   `trackContent` varchar(255) DEFAULT NULL,
+  `body` varchar(255) DEFAULT NULL,
+  `url` varchar(255) DEFAULT NULL,
+  `method` varchar(11) DEFAULT NULL,
+  `init` varchar(255) DEFAULT NULL,
+  `input` varchar(255) DEFAULT NULL,
+  `requestType` varchar(255) DEFAULT NULL,
+  `routeData` varchar(11) DEFAULT NULL,
+  `title` varchar(255) DEFAULT NULL,
+  `routeType` varchar(11) DEFAULT NULL,
   PRIMARY KEY (`trackId`)
 ) ENGINE=InnoDB AUTO_INCREMENT=84 DEFAULT CHARSET=utf8;

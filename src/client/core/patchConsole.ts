@@ -10,14 +10,12 @@ export default function patchConsole(context: Context) {
     // 保存一手
     const originConsoleFun = console[val];
     console[val] = function (message?: any, ...optionalParams: any[]) {
-      const params = {
-        message,
-        ...optionalParams,
-      };
       const data: ErrorData = Object.assign(context.data(), {
         timeStamp: new Date().toString(),
         mainType: "CONSOLE",
-        data: params,
+        data: {
+          message,
+        },
         pageInfo: getPageInfo(),
         currentUrl: window.location.href,
         refererUrl: document.referrer || "/", // 看下来源

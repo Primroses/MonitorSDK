@@ -29,82 +29,110 @@ const db = new DB("monitor"); // worker 跟 主线程的db Request 是不同的 
 
 // async await 和 promise 的小问题，await 是要await 一个值 ，如果函数里面返回没有值 就不会await  直接执行?
 
-async function cleanTableData(DBRequest: IDBDatabase, tableName: string) {
+/**
+ *
+ * @param {IDBDatabase} DBRequest
+ * @param {string} tableName
+ */
+async function cleanTable(DBRequest: IDBDatabase, tableName: TableName) {
   // 我觉得 error 里面就应该存在那种 patch Function中出现的问题 。正常的error 都应该直接上报的
-  let data = await db.read(DBRequest, tableName); // 先读表
 
-  await db.clear(DBRequest, tableName); // 然后清除表
-  console.log("[Cleaned Table " + tableName + " ]");
   // 定时清理 但是 应该要的是LRU 才对的 翻转过来 的 LRU 好像有点扯?
   // 这种错误 直接过滤成
-  const retData: ErrorData[] & TrackData[] = [];
-  const stackSet = new Set<string>();
-  if (tableName === "error" && data.length) {
-    // const retIndex: number[] = []; // 本来还想记录一下 index 值的 这里需要考虑一下 记不记录
-    for (let error of data) {
-      // 拿到关键的 对比
-      const { message } = (error as ErrorData).data;
-      if (!stackSet.has(message.trim())) {
-        stackSet.add(message.trim());
+
+  // 读取的时候就的知道是什么mainType 所以得把mainType 跟 表名 先列出来
+  try {
+    const data = await db.read(DBRequest, tableName);
+    await db.clear(DBRequest, tableName); // 然后清除表
+    console.log("[Cleaned Table " + tableName + " ]");
+    const map = divideDataToMap(data as ErrorData[] | TrackData[]);
+
+    for (let [key, value] of map) {
+      // 清理过后的数据
+      const filterData = filterTable(value, key);
+      for (let data of filterData) {
+        db.add(DBRequest, tableName, data);
+        postMessage(JSON.stringify({ saveType: "indexDB", data, tableName }));
       }
     }
-    // 超级简单的LRU 算法 性能肯定没有 链表来得好 LRU 过后 将拿出来的 数据全部都上传....
-    // LRU的目的是 将最后出现的那个 留下来 ，就是这个时间内 这个bug 还是出现的 这个错误仍然存在
-    for (let message of stackSet) {
-      retData.push(
-        (data as ErrorData[])
-          .filter((val: ErrorData) => message === val.data.message.trim())
-          .pop()
-      );
-    }
-    // 清理完是不是应该要发送一波请求呢?
-    // LRU 过后 得同步 找到对应 index 值 删掉 其中的 不要全部删掉?
-  } else if (tableName === "track") {
-    for (let track of data) {
-      if (track.mainType === "REQUEST") {
-        // 拿到关键的 对比
-        const { url } = (track as TrackData).data;
-        if (!stackSet.has(url.trim())) {
-          stackSet.add(url.trim());
-        }
-      } else {
-        // 拿到关键的 对比
-        const { trackTarget } = (track as TrackData).data;
-        if (!stackSet.has(trackTarget.trim())) {
-          stackSet.add(trackTarget.trim());
-        }
-      }
-    }
-    for (let el of stackSet) {
-      retData.push(
-        (data as TrackData[])
-          .filter((val: TrackData) => {
-            if (val.mainType === "REQUEST") {
-              return el === val.data.url;
-            } else {
-              return el === val.data.trackTarget;
-            }
-          })
-          .pop()
-      );
-    }
+  } catch (error) {
+    // 后面自己在捕获一手?
+    console.error(error);
   }
-  for (let data of retData) {
-    // 到底还要不要添加?
-    db.add(DBRequest, tableName, data); // 把LRU的数据再添加进去
-    postMessage(JSON.stringify({ saveType: "indexDB", data, tableName }));
-  }
+
+  // 弄完最后再清理
 }
 
-// 启动 worker
-async function startWorker(DBRequest: IDBDatabase) {
+/**
+ * 根据mainType来区分数据
+ * mainType 存在Data里面 所以直接遍历data 就可以了..
+ * @param {(ErrorData[] | TrackData[])} data
+ * @returns
+ */
+function divideDataToMap(data: ErrorData[] | TrackData[]) {
+  const divideMap = new Map<MainDataType, ErrorData[] | TrackData[]>();
+  for (let val of data) {
+    if (!divideMap.get(val.mainType)) {
+      const arr: ErrorData[] | TrackData[] = [];
+      arr.push(val);
+      divideMap.set(val.mainType, arr);
+    } else {
+      const arr = divideMap.get(val.mainType);
+      arr.push(val);
+      divideMap.set(val.mainType, arr);
+    }
+  }
+  return divideMap;
+}
+
+/**
+ *
+ * @param {TableName} tableName
+ * @param {MainDataType} mainType
+ * @param {(ErrorData[] | TrackData[])} data
+ * @returns {(ErrorData[] & TrackData[])}
+ */
+function filterTable(
+  data: ErrorData[] | TrackData[],
+  mainType: MainDataType
+): ErrorData[] | TrackData[] {
+  // 刚开始或者是 别的 错手删掉的时候 就直接返回
+  if (!data.length) {
+    return data;
+  }
+  // 存在 error 中的数据 mainType有 CONSOLE  / ERROR RESOURSE PROMISE 直接上传 不需要过滤
+  // CONSOLE -> message
+
+  // 第一次是用数组进行 LRU 后来发现 如果一个MainType 里面有多个 就无法这样做了 只能用 map 来做
+  // LRU 是 基本数据类型的值都可以用数组来做 但是 如果是map 就不行了....
+
+  // 超级简单的 LRU 就是用一个map 疯狂的重复赋值?
+  const filterMap = new Map<string, ErrorData | TrackData>();
+  const retData: ErrorData[] | TrackData[] = [];
+  // 这个逼 不知道自己是什么类型
+  (data as ErrorData[]).forEach((val) => {
+    filterMap.set(JSON.stringify(val.data), val);
+  });
+  for (let [, value] of filterMap) {
+    retData.push(value);
+  }
+  return retData;
+}
+
+/**
+ * 启动清除的 worker
+ *
+ * @param {IDBDatabase} DBRequest
+ * @returns
+ */
+async function startCleanWorker(DBRequest: IDBDatabase) {
   // const DBRequest = await db.DBResolve();
-  const cleanTables: string[] = ["error", "track"];
+  const cleanTables: TableName[] = ["error", "track"];
   return new Promise((resolve) => {
-    console.log("[Worker]", "worker启动");
+    // console.log("[Worker]", "worker启动");
     for (let i = 0; i < cleanTables.length; i++) {
       // for 循环 不会并行 而是串行?
-      cleanTableData(DBRequest, cleanTables[i]);
+      cleanTable(DBRequest, cleanTables[i]);
     }
     resolve(true);
   });
@@ -124,17 +152,18 @@ async function main() {
   // 这里得有一个 message的队列操作才行。
 
   // 最后通过事件的方法 通知以后再开始 start
-  postMessage(JSON.stringify({ success: "OK" }));
+  postMessage(JSON.stringify({ success: true }));
   // 最后发现 异步队列的问题就是 不知道谁先谁后的问题 ，双线程 有一个 先后顺序
   // 如何保证 谁先谁后
   self.addEventListener("message", async function (message) {
     const currentVisited = new Date().getTime();
     const { saveType, data } = JSON.parse(message.data);
-    console.log(saveType, data);
+
     if (saveType === "store") {
       // 够时间了 就开一手 hack 定时任务
-      startWorker(DBRequest);
+      startCleanWorker(DBRequest);
       if (
+        // 这里localStorage 存放的永远是字符串 所以 不能用 !data.LastVisited 来简单判断
         data.LastVisited === "undefined" ||
         currentVisited - parseInt(data.LastVisited) > TIMEGAP
       ) {
@@ -148,7 +177,8 @@ async function main() {
       }
     } else if (saveType === "indexDB") {
       const { operatorType, tableName } = data;
-      console.log(operatorType, tableName, "indexDB");
+      console.log(data)
+      // console.log(operatorType, tableName, "indexDB");
       db[operatorType as OperatorType](DBRequest, tableName, data.data);
     }
   });

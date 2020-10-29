@@ -40,14 +40,16 @@ export default class DB {
           autoIncrement: true,
         });
         // 这是创建字段 索引是方便 搜索吧?
-        // objectStore.createIndex("error", "error", { unique: true });
+        objectStore.createIndex("mainType", "mainType");
       }
       // track 也不是不行 记录的是这个人的 所操作的应用的过程
       if (!currentDB.objectStoreNames.contains("track")) {
-        currentDB.createObjectStore("track", {
+        const objectStore = currentDB.createObjectStore("track", {
           keyPath: "pathId",
           autoIncrement: true,
         });
+        // 这是创建字段 索引是方便 搜索吧?
+        objectStore.createIndex("mainType", "mainType");
       }
     };
   }
@@ -104,7 +106,7 @@ export default class DB {
 
   // 感觉还是得设计成 promise 比较友好一点 毕竟异步
 
-  async read(DBRequest: IDBDatabase, tableName: string) {
+  async read(DBRequest: IDBDatabase, tableName: string, mainType?: string) {
     // this.transactionList.push(function (DB) {
     //   const result = [];
     //   var objectStore = DB.transaction([tableName]).objectStore(tableName);
@@ -122,22 +124,35 @@ export default class DB {
     const objectStore = DBRequest.transaction([tableName]).objectStore(
       tableName
     );
-    return new Promise<ErrorData[] | TrackData[]>((resolve, reject) => {
-      objectStore
-        .openCursor()
-        .addEventListener("success", function (event: any) {
-          var cursor = event.target.result;
-          if (cursor) {
-            result.push(cursor.value);
-            cursor.continue();
-          } else {
-            resolve(result);
-          }
+    if (mainType) {
+      const indexRequest = objectStore.index("mainType").get(mainType);
+      return new Promise<ErrorData | TrackData>((resolve, reject) => {
+        indexRequest.addEventListener("success", function (event: any) {
+          var cursor = event.target.result; //不是游标 是一个个数据
+          resolve(cursor);
         });
-      objectStore.openCursor().addEventListener("error", function (event) {
-        reject(event);
+        objectStore.openCursor().addEventListener("error", function (event) {
+          reject(event);
+        });
       });
-    });
+    } else {
+      return new Promise<ErrorData[] | TrackData[]>((resolve, reject) => {
+        objectStore
+          .openCursor()
+          .addEventListener("success", function (event: any) {
+            var cursor = event.target.result;
+            if (cursor) {
+              result.push(cursor.value);
+              cursor.continue();
+            } else {
+              resolve(result);
+            }
+          });
+        objectStore.openCursor().addEventListener("error", function (event) {
+          reject(event);
+        });
+      });
+    }
   }
   // 直接清理一手
   async clear(DBRequest: IDBDatabase, tableName: string) {

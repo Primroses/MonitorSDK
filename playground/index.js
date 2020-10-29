@@ -250,11 +250,12 @@
                 for (var _i = 1; _i < arguments.length; _i++) {
                     optionalParams[_i - 1] = arguments[_i];
                 }
-                var params = __assign({ message: message }, optionalParams);
                 var data = Object.assign(context.data(), {
                     timeStamp: new Date().toString(),
                     mainType: "CONSOLE",
-                    data: params,
+                    data: {
+                        message: message,
+                    },
                     pageInfo: getPageInfo(),
                     currentUrl: window.location.href,
                     refererUrl: document.referrer || "/",
@@ -333,8 +334,6 @@
                 if (tagName != "HTML") {
                     var params = {
                         trackTarget: trackTarget(tagName, id, className),
-                        offsetX: e.offsetX,
-                        offsetY: e.offsetY,
                         trackType: e.type,
                         trackContent: outerHTML,
                     };
@@ -378,6 +377,7 @@
 
     function patchRequest(context) {
         patchAjax(context);
+        patchFetch(context);
     }
     function patchAjax(context) {
         var filterUrl = ["login", "register"];
@@ -400,12 +400,11 @@
             var data = Object.assign(context.data(), {
                 timeStamp: new Date(),
                 mainType: "REQUEST",
-                data: __assign(__assign({}, params), { body: body }),
+                data: __assign(__assign({}, params), { body: body, requestType: "AJAX" }),
                 pageInfo: getPageInfo(),
                 currentUrl: window.location.href,
                 refererUrl: document.referrer || "/",
             });
-            console.log(data);
             context.worker.add("indexDB", {
                 operatorType: "add",
                 tableName: "track",
@@ -415,8 +414,87 @@
             return originSend && originSend.call(this, body);
         };
     }
+    function patchFetch(context) {
+        var _this = this;
+        var originFetch = window.fetch;
+        window.fetch = function (input, init) {
+            var data = Object.assign(context.data(), {
+                timeStamp: new Date(),
+                mainType: "REQUEST",
+                data: {
+                    input: input,
+                    init: JSON.stringify(init),
+                    requestType: "FETCH",
+                },
+                pageInfo: getPageInfo(),
+                currentUrl: window.location.href,
+                refererUrl: document.referrer || "/",
+            });
+            context.worker.add("indexDB", {
+                operatorType: "add",
+                tableName: "track",
+                data: data,
+            });
+            return originFetch && originFetch.call(_this, input, init);
+        };
+    }
 
     function patchRoute(context) {
+        patchHistory(context);
+        patchHash(context);
+    }
+    function patchHistory(context) {
+        var historyFun = ["pushState", "replaceState"];
+        historyFun.forEach(function (val) {
+            var originHistoryFun = window.history[val];
+            window.history[val] = function (data, title, url) {
+                var historyData = Object.assign(context.data(), {
+                    timeStamp: new Date().toString(),
+                    mainType: "ROUTE",
+                    data: {
+                        routeData: JSON.stringify(data),
+                        title: title,
+                        url: url,
+                        routeType: val,
+                    },
+                    pageInfo: getPageInfo(),
+                    currentUrl: window.location.href,
+                    refererUrl: document.referrer || "/",
+                });
+                context.worker.add("indexDB", {
+                    operatorType: "add",
+                    tableName: "track",
+                    data: historyData,
+                });
+                return originHistoryFun && originHistoryFun.call(this, data, title, url);
+            };
+        });
+    }
+    function patchHash(context) {
+        var originHashChange = window.onhashchange;
+        window.onhashchange = function (event) {
+            var url = "/" + window.location.hash.substr(1);
+            var data = Object.assign(context.data(), {
+                timeStamp: new Date().toString(),
+                mainType: "ROUTE",
+                data: {
+                    url: url,
+                    routeType: "Hash",
+                },
+                pageInfo: getPageInfo(),
+                currentUrl: window.location.href,
+                refererUrl: document.referrer || "/",
+            });
+            context.worker.add("indexDB", {
+                operatorType: "add",
+                tableName: "track",
+                data: data,
+            });
+            return originHashChange && originHashChange.call(this, event);
+        };
+    }
+
+    function patchPerformace(context) {
     }
 
     function warpPatch(context) {
@@ -501,12 +579,14 @@
                         keyPath: "errorId",
                         autoIncrement: true,
                     });
+                    objectStore.createIndex("mainType", "mainType");
                 }
                 if (!currentDB.objectStoreNames.contains("track")) {
-                    currentDB.createObjectStore("track", {
+                    var objectStore = currentDB.createObjectStore("track", {
                         keyPath: "pathId",
                         autoIncrement: true,
                     });
+                    objectStore.createIndex("mainType", "mainType");
                 }
             };
         }
@@ -536,29 +616,43 @@
                 });
             });
         };
-        DB.prototype.read = function (DBRequest, tableName) {
+        DB.prototype.read = function (DBRequest, tableName, mainType) {
             return __awaiter(this, void 0, void 0, function () {
-                var result, objectStore;
+                var result, objectStore, indexRequest_1;
                 return __generator(this, function (_a) {
                     result = [];
                     objectStore = DBRequest.transaction([tableName]).objectStore(tableName);
-                    return [2, new Promise(function (resolve, reject) {
-                            objectStore
-                                .openCursor()
-                                .addEventListener("success", function (event) {
-                                var cursor = event.target.result;
-                                if (cursor) {
-                                    result.push(cursor.value);
-                                    cursor.continue();
-                                }
-                                else {
-                                    resolve(result);
-                                }
-                            });
-                            objectStore.openCursor().addEventListener("error", function (event) {
-                                reject(event);
-                            });
-                        })];
+                    if (mainType) {
+                        indexRequest_1 = objectStore.index("mainType").get(mainType);
+                        return [2, new Promise(function (resolve, reject) {
+                                indexRequest_1.addEventListener("success", function (event) {
+                                    var cursor = event.target.result;
+                                    resolve(cursor);
+                                });
+                                objectStore.openCursor().addEventListener("error", function (event) {
+                                    reject(event);
+                                });
+                            })];
+                    }
+                    else {
+                        return [2, new Promise(function (resolve, reject) {
+                                objectStore
+                                    .openCursor()
+                                    .addEventListener("success", function (event) {
+                                    var cursor = event.target.result;
+                                    if (cursor) {
+                                        result.push(cursor.value);
+                                        cursor.continue();
+                                    }
+                                    else {
+                                        resolve(result);
+                                    }
+                                });
+                                objectStore.openCursor().addEventListener("error", function (event) {
+                                    reject(event);
+                                });
+                            })];
+                    }
                 });
             });
         };
@@ -630,16 +724,31 @@
     var InitWorker = (function () {
         function InitWorker() {
             this.worker = new Worker("../worker.js");
+            this.messageQuene = [];
             this.store = new Store();
         }
         InitWorker.prototype.sentMessageToWorker = function (data) {
-            this.worker.postMessage(JSON.stringify(data));
+            var that = this;
+            if (this.success) {
+                if (this.messageQuene.length) {
+                    this.messageQuene.forEach(function (val) {
+                        that.worker.postMessage(JSON.stringify(val));
+                    });
+                    this.messageQuene = [];
+                }
+                that.worker.postMessage(JSON.stringify(data));
+            }
+            else {
+                this.messageQuene.push(data);
+            }
         };
         InitWorker.prototype.acceptMessageFromWorker = function (worker, req) {
+            var _this = this;
             var that = this;
             this.worker.addEventListener("message", function (message) {
-                var _a = JSON.parse(message.data), saveType = _a.saveType, acceptLastVisited = _a.acceptLastVisited, data = _a.data, success = _a.success, tableName = _a.tableName;
+                var _a = JSON.parse(message.data), saveType = _a.saveType, acceptLastVisited = _a.acceptLastVisited, data = _a.data, tableName = _a.tableName, success = _a.success;
                 if (success) {
+                    _this.success = true;
                     var LastVisited = worker.store.get("LastVisited");
                     worker.sentMessageToWorker({
                         saveType: "store",
@@ -650,6 +759,7 @@
                     that.store.set("LastVisited", acceptLastVisited);
                 }
                 else if (saveType === "indexDB") {
+                    console.log(data, tableName);
                     req(__assign(__assign({}, data), { tableName: tableName }), "/error");
                 }
             });
@@ -666,14 +776,13 @@
         };
         return InitWorker;
     }());
+    var worker = new InitWorker();
     function workerMain(req) {
-        var worker = new InitWorker();
         worker.acceptMessageFromWorker(worker, req);
     }
 
     function initMonitor(options) {
         var db = new DB("monitor");
-        var worker = new InitWorker();
         var data = new Data({
             userId: "1345854620",
             trackId: genNonDuplicateID(),
@@ -698,6 +807,7 @@
         workerMain(req);
         var patchFunction = [
             warpPatch,
+            patchPerformace,
             patchConsole,
             patchError,
             patchEvent,
@@ -709,6 +819,9 @@
             patchFunction[i](context);
         }
         beautifyConsole("[ MonitorSDK ]", "Starting Monitor");
+        return {
+            req: req,
+        };
     }
 
     exports.initMonitor = initMonitor;

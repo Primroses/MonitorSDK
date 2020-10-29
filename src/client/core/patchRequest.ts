@@ -4,6 +4,7 @@ import { getPageInfo } from "../utils/index";
 export default function patchRequest(context: Context) {
   // console.log(context, "Request");
   patchAjax(context);
+  patchFetch(context);
 }
 
 // 这里还是分开操作吧 一起操作可能会出事  虽然不太可能一个项目 又用fetch 又有ajax
@@ -48,12 +49,13 @@ function patchAjax(context: Context) {
       data: {
         ...params,
         body,
+        requestType: "AJAX",
       },
       pageInfo: getPageInfo(),
       currentUrl: window.location.href,
       refererUrl: document.referrer || "/", // 看下来源
     });
-    console.log(data)
+
     context.worker.add("indexDB", {
       operatorType: "add",
       tableName: "track",
@@ -62,5 +64,30 @@ function patchAjax(context: Context) {
 
     currentTime += 1;
     return originSend && originSend.call(this, body);
+  };
+}
+
+function patchFetch(context: Context) {
+  const originFetch = window.fetch;
+  window.fetch = (input: RequestInfo, init?: RequestInit) => {
+    const data = Object.assign(context.data(), {
+      timeStamp: new Date(),
+      mainType: "REQUEST",
+      data: {
+        input,
+        init: JSON.stringify(init),
+        requestType: "FETCH",
+      },
+      pageInfo: getPageInfo(),
+      currentUrl: window.location.href,
+      refererUrl: document.referrer || "/", // 看下来源
+    });
+
+    context.worker.add("indexDB", {
+      operatorType: "add",
+      tableName: "track",
+      data,
+    });
+    return originFetch && originFetch.call(this, input, init);
   };
 }

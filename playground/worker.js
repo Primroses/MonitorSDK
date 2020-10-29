@@ -66,6 +66,23 @@
         };
     }
 
+    function __read(o, n) {
+        var m = typeof Symbol === "function" && o[Symbol.iterator];
+        if (!m) return o;
+        var i = m.call(o), r, ar = [], e;
+        try {
+            while ((n === void 0 || n-- > 0) && !(r = i.next()).done) ar.push(r.value);
+        }
+        catch (error) { e = { error: error }; }
+        finally {
+            try {
+                if (r && !r.done && (m = i["return"])) m.call(i);
+            }
+            finally { if (e) throw e.error; }
+        }
+        return ar;
+    }
+
     var DB = (function () {
         function DB(databaseName, version) {
             if (version === void 0) { version = 1.0; }
@@ -84,12 +101,14 @@
                         keyPath: "errorId",
                         autoIncrement: true,
                     });
+                    objectStore.createIndex("mainType", "mainType");
                 }
                 if (!currentDB.objectStoreNames.contains("track")) {
-                    currentDB.createObjectStore("track", {
+                    var objectStore = currentDB.createObjectStore("track", {
                         keyPath: "pathId",
                         autoIncrement: true,
                     });
+                    objectStore.createIndex("mainType", "mainType");
                 }
             };
         }
@@ -119,29 +138,43 @@
                 });
             });
         };
-        DB.prototype.read = function (DBRequest, tableName) {
+        DB.prototype.read = function (DBRequest, tableName, mainType) {
             return __awaiter(this, void 0, void 0, function () {
-                var result, objectStore;
+                var result, objectStore, indexRequest_1;
                 return __generator(this, function (_a) {
                     result = [];
                     objectStore = DBRequest.transaction([tableName]).objectStore(tableName);
-                    return [2, new Promise(function (resolve, reject) {
-                            objectStore
-                                .openCursor()
-                                .addEventListener("success", function (event) {
-                                var cursor = event.target.result;
-                                if (cursor) {
-                                    result.push(cursor.value);
-                                    cursor.continue();
-                                }
-                                else {
-                                    resolve(result);
-                                }
-                            });
-                            objectStore.openCursor().addEventListener("error", function (event) {
-                                reject(event);
-                            });
-                        })];
+                    if (mainType) {
+                        indexRequest_1 = objectStore.index("mainType").get(mainType);
+                        return [2, new Promise(function (resolve, reject) {
+                                indexRequest_1.addEventListener("success", function (event) {
+                                    var cursor = event.target.result;
+                                    resolve(cursor);
+                                });
+                                objectStore.openCursor().addEventListener("error", function (event) {
+                                    reject(event);
+                                });
+                            })];
+                    }
+                    else {
+                        return [2, new Promise(function (resolve, reject) {
+                                objectStore
+                                    .openCursor()
+                                    .addEventListener("success", function (event) {
+                                    var cursor = event.target.result;
+                                    if (cursor) {
+                                        result.push(cursor.value);
+                                        cursor.continue();
+                                    }
+                                    else {
+                                        resolve(result);
+                                    }
+                                });
+                                objectStore.openCursor().addEventListener("error", function (event) {
+                                    reject(event);
+                                });
+                            })];
+                    }
                 });
             });
         };
@@ -161,137 +194,119 @@
     }());
 
     var db = new DB("monitor");
-    function cleanTableData(DBRequest, tableName) {
+    function cleanTable(DBRequest, tableName) {
         return __awaiter(this, void 0, void 0, function () {
-            var data, retData, stackSet, data_1, data_1_1, error, message, _loop_1, stackSet_1, stackSet_1_1, message, data_2, data_2_1, track, url, trackTarget, _loop_2, stackSet_2, stackSet_2_1, el, retData_1, retData_1_1, data_3;
-            var e_1, _a, e_2, _b, e_3, _c, e_4, _d, e_5, _e;
-            return __generator(this, function (_f) {
-                switch (_f.label) {
-                    case 0: return [4, db.read(DBRequest, tableName)];
+            var data, map, map_1, map_1_1, _a, key, value, filterData, filterData_1, filterData_1_1, data_1, error_1;
+            var e_1, _b, e_2, _c;
+            return __generator(this, function (_d) {
+                switch (_d.label) {
+                    case 0:
+                        _d.trys.push([0, 3, , 4]);
+                        return [4, db.read(DBRequest, tableName)];
                     case 1:
-                        data = _f.sent();
+                        data = _d.sent();
                         return [4, db.clear(DBRequest, tableName)];
                     case 2:
-                        _f.sent();
+                        _d.sent();
                         console.log("[Cleaned Table " + tableName + " ]");
-                        retData = [];
-                        stackSet = new Set();
-                        if (tableName === "error" && data.length) {
-                            try {
-                                for (data_1 = __values(data), data_1_1 = data_1.next(); !data_1_1.done; data_1_1 = data_1.next()) {
-                                    error = data_1_1.value;
-                                    message = error.data.message;
-                                    if (!stackSet.has(message.trim())) {
-                                        stackSet.add(message.trim());
-                                    }
-                                }
-                            }
-                            catch (e_1_1) { e_1 = { error: e_1_1 }; }
-                            finally {
-                                try {
-                                    if (data_1_1 && !data_1_1.done && (_a = data_1.return)) _a.call(data_1);
-                                }
-                                finally { if (e_1) throw e_1.error; }
-                            }
-                            _loop_1 = function (message) {
-                                retData.push(data
-                                    .filter(function (val) { return message === val.data.message.trim(); })
-                                    .pop());
-                            };
-                            try {
-                                for (stackSet_1 = __values(stackSet), stackSet_1_1 = stackSet_1.next(); !stackSet_1_1.done; stackSet_1_1 = stackSet_1.next()) {
-                                    message = stackSet_1_1.value;
-                                    _loop_1(message);
-                                }
-                            }
-                            catch (e_2_1) { e_2 = { error: e_2_1 }; }
-                            finally {
-                                try {
-                                    if (stackSet_1_1 && !stackSet_1_1.done && (_b = stackSet_1.return)) _b.call(stackSet_1);
-                                }
-                                finally { if (e_2) throw e_2.error; }
-                            }
-                        }
-                        else if (tableName === "track") {
-                            try {
-                                for (data_2 = __values(data), data_2_1 = data_2.next(); !data_2_1.done; data_2_1 = data_2.next()) {
-                                    track = data_2_1.value;
-                                    if (track.mainType === "REQUEST") {
-                                        url = track.data.url;
-                                        if (!stackSet.has(url.trim())) {
-                                            stackSet.add(url.trim());
-                                        }
-                                    }
-                                    else {
-                                        trackTarget = track.data.trackTarget;
-                                        if (!stackSet.has(trackTarget.trim())) {
-                                            stackSet.add(trackTarget.trim());
-                                        }
-                                    }
-                                }
-                            }
-                            catch (e_3_1) { e_3 = { error: e_3_1 }; }
-                            finally {
-                                try {
-                                    if (data_2_1 && !data_2_1.done && (_c = data_2.return)) _c.call(data_2);
-                                }
-                                finally { if (e_3) throw e_3.error; }
-                            }
-                            console.log(retData);
-                            _loop_2 = function (el) {
-                                retData.push(data
-                                    .filter(function (val) {
-                                    if (val.mainType === "REQUEST") {
-                                        return el === val.data.url;
-                                    }
-                                    else {
-                                        return el === val.data.trackTarget;
-                                    }
-                                })
-                                    .pop());
-                            };
-                            try {
-                                for (stackSet_2 = __values(stackSet), stackSet_2_1 = stackSet_2.next(); !stackSet_2_1.done; stackSet_2_1 = stackSet_2.next()) {
-                                    el = stackSet_2_1.value;
-                                    _loop_2(el);
-                                }
-                            }
-                            catch (e_4_1) { e_4 = { error: e_4_1 }; }
-                            finally {
-                                try {
-                                    if (stackSet_2_1 && !stackSet_2_1.done && (_d = stackSet_2.return)) _d.call(stackSet_2);
-                                }
-                                finally { if (e_4) throw e_4.error; }
-                            }
-                        }
+                        map = divideDataToMap(data);
                         try {
-                            for (retData_1 = __values(retData), retData_1_1 = retData_1.next(); !retData_1_1.done; retData_1_1 = retData_1.next()) {
-                                data_3 = retData_1_1.value;
-                                db.add(DBRequest, tableName, data_3);
-                                postMessage(JSON.stringify({ saveType: "indexDB", data: data_3, tableName: tableName }));
+                            for (map_1 = __values(map), map_1_1 = map_1.next(); !map_1_1.done; map_1_1 = map_1.next()) {
+                                _a = __read(map_1_1.value, 2), key = _a[0], value = _a[1];
+                                filterData = filterTable(value, key);
+                                try {
+                                    for (filterData_1 = (e_2 = void 0, __values(filterData)), filterData_1_1 = filterData_1.next(); !filterData_1_1.done; filterData_1_1 = filterData_1.next()) {
+                                        data_1 = filterData_1_1.value;
+                                        db.add(DBRequest, tableName, data_1);
+                                        postMessage(JSON.stringify({ saveType: "indexDB", data: data_1, tableName: tableName }));
+                                    }
+                                }
+                                catch (e_2_1) { e_2 = { error: e_2_1 }; }
+                                finally {
+                                    try {
+                                        if (filterData_1_1 && !filterData_1_1.done && (_c = filterData_1.return)) _c.call(filterData_1);
+                                    }
+                                    finally { if (e_2) throw e_2.error; }
+                                }
                             }
                         }
-                        catch (e_5_1) { e_5 = { error: e_5_1 }; }
+                        catch (e_1_1) { e_1 = { error: e_1_1 }; }
                         finally {
                             try {
-                                if (retData_1_1 && !retData_1_1.done && (_e = retData_1.return)) _e.call(retData_1);
+                                if (map_1_1 && !map_1_1.done && (_b = map_1.return)) _b.call(map_1);
                             }
-                            finally { if (e_5) throw e_5.error; }
+                            finally { if (e_1) throw e_1.error; }
                         }
-                        return [2];
+                        return [3, 4];
+                    case 3:
+                        error_1 = _d.sent();
+                        console.error(error_1);
+                        return [3, 4];
+                    case 4: return [2];
                 }
             });
         });
     }
-    function startWorker(DBRequest) {
+    function divideDataToMap(data) {
+        var e_3, _a;
+        var divideMap = new Map();
+        try {
+            for (var data_2 = __values(data), data_2_1 = data_2.next(); !data_2_1.done; data_2_1 = data_2.next()) {
+                var val = data_2_1.value;
+                if (!divideMap.get(val.mainType)) {
+                    var arr = [];
+                    arr.push(val);
+                    divideMap.set(val.mainType, arr);
+                }
+                else {
+                    var arr = divideMap.get(val.mainType);
+                    arr.push(val);
+                    divideMap.set(val.mainType, arr);
+                }
+            }
+        }
+        catch (e_3_1) { e_3 = { error: e_3_1 }; }
+        finally {
+            try {
+                if (data_2_1 && !data_2_1.done && (_a = data_2.return)) _a.call(data_2);
+            }
+            finally { if (e_3) throw e_3.error; }
+        }
+        return divideMap;
+    }
+    function filterTable(data, mainType) {
+        var e_4, _a;
+        if (!data.length) {
+            return data;
+        }
+        var filterMap = new Map();
+        var retData = [];
+        data.forEach(function (val) {
+            filterMap.set(JSON.stringify(val.data), val);
+        });
+        try {
+            for (var filterMap_1 = __values(filterMap), filterMap_1_1 = filterMap_1.next(); !filterMap_1_1.done; filterMap_1_1 = filterMap_1.next()) {
+                var _b = __read(filterMap_1_1.value, 2), value = _b[1];
+                retData.push(value);
+            }
+        }
+        catch (e_4_1) { e_4 = { error: e_4_1 }; }
+        finally {
+            try {
+                if (filterMap_1_1 && !filterMap_1_1.done && (_a = filterMap_1.return)) _a.call(filterMap_1);
+            }
+            finally { if (e_4) throw e_4.error; }
+        }
+        return retData;
+    }
+    function startCleanWorker(DBRequest) {
         return __awaiter(this, void 0, void 0, function () {
             var cleanTables;
             return __generator(this, function (_a) {
                 cleanTables = ["error", "track"];
                 return [2, new Promise(function (resolve) {
-                        console.log("[Worker]", "worker启动");
                         for (var i = 0; i < cleanTables.length; i++) {
-                            cleanTableData(DBRequest, cleanTables[i]);
+                            cleanTable(DBRequest, cleanTables[i]);
                         }
                         resolve(true);
                     })];
@@ -307,16 +322,15 @@
                     case 1:
                         DBRequest = _a.sent();
                         TIMEGAP = 1000 * 60 * 60 * 24;
-                        postMessage(JSON.stringify({ success: "OK" }));
+                        postMessage(JSON.stringify({ success: true }));
                         self.addEventListener("message", function (message) {
                             return __awaiter(this, void 0, void 0, function () {
                                 var currentVisited, _a, saveType, data, operatorType, tableName;
                                 return __generator(this, function (_b) {
                                     currentVisited = new Date().getTime();
                                     _a = JSON.parse(message.data), saveType = _a.saveType, data = _a.data;
-                                    console.log(saveType, data);
                                     if (saveType === "store") {
-                                        startWorker(DBRequest);
+                                        startCleanWorker(DBRequest);
                                         if (data.LastVisited === "undefined" ||
                                             currentVisited - parseInt(data.LastVisited) > TIMEGAP) {
                                             postMessage(JSON.stringify({
@@ -327,7 +341,7 @@
                                     }
                                     else if (saveType === "indexDB") {
                                         operatorType = data.operatorType, tableName = data.tableName;
-                                        console.log(operatorType, tableName, "indexDB");
+                                        console.log(data);
                                         db[operatorType](DBRequest, tableName, data.data);
                                     }
                                     return [2];

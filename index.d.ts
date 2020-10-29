@@ -4,9 +4,9 @@ interface User {
   userId: string | number;
   userName: string;
 }
-interface UpLoadData {
-  [key: string]: any;
-}
+// interface UpLoadData {
+//   [key: string]: any;
+// }
 
 interface DeviceInfo {
   browser: {
@@ -23,27 +23,29 @@ interface PageInfo {
   screenHeight: number;
 }
 
-interface PerformanceOptions {
-  loadPageTime: number;
-  domReady: number;
-  redirect: number;
-  lookupDomain: number;
-  TTFB: number;
-  contentReady: number;
-  connect: number;
-  url: string;
-}
+// interface PerformanceOptions {
+//   loadPageTime: number;
+//   domReady: number;
+//   redirect: number;
+//   lookupDomain: number;
+//   TTFB: number;
+//   contentReady: number;
+//   connect: number;
+//   url: string;
+// }
 
-interface ResourceOptions {
-  resourceName: string;
-  redirect: number;
-  request: number;
-  duration: number;
-  connect: number;
-}
+// interface ResourceOptions {
+//   resourceName: string;
+//   redirect: number;
+//   request: number;
+//   duration: number;
+//   connect: number;
+// }
 
 // 上报的数据类型
 // type DataType = "ERROR" | "PROMISE" | "AJAX" | "RESOURCE" | "TRACK" | "EVENT" | "PERFORMANCE";
+
+
 
 type MainDataType =
   | "ERROR"
@@ -57,10 +59,12 @@ type MainDataType =
   | "CONSOLE"
   | "REQUEST"
 
-// History的方法
-type HistoryFun = "pushState" | "replaceState";
+type TableName = "error" | "track"
 
-type AdaptorType = "ERROR" | "TRACK" | "PERFORMANCE" | "RESOURCE"; // 错误还是 路径 性能类型
+// History的方法
+// type HistoryFun = "pushState" | "replaceState";
+
+// type AdaptorType = "ERROR" | "TRACK" | "PERFORMANCE" | "RESOURCE"; // 错误还是 路径 性能类型
 
 type OperatorType = "add" | "clear" | "read";
 

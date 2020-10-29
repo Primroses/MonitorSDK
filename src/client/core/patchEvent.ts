@@ -48,8 +48,8 @@ export default function patchEvent(context: Context) {
       if (tagName != "HTML") {
         const params = {
           trackTarget: trackTarget(tagName, id, className),
-          offsetX: e.offsetX,
-          offsetY: e.offsetY,
+          // offsetX: e.offsetX,
+          // offsetY: e.offsetY,
           trackType: e.type,
           trackContent: outerHTML,
         };

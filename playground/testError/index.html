@@ -13,12 +13,14 @@
     <div id="button" class="A B C D">ACACAA</div>
   </body>
 </html>
-<script>
+<!-- <script>
   console.warn("ACACACACCCACAA");
 </script>
-
 <script>
-  throw new Error("AAAAAA");
+  console.warn("BCBCCACBCABCABCBA");
+</script> -->
+<script>
+  // throw new Error("AAAAAA");
   // var worker = new Worker("../testWorker.js")
   // worker.postMessage("hello Worker")
   // worker.addEventListener('message',function(e){
@@ -26,14 +28,14 @@
   // })
 </script>
 
-<script>
+<!-- <script>
   new Promise((resolve, reject) => {
     throw new Error("CCCC");
   });
-</script>
-<script src="./index.js"></script>
+</script> -->
+<!-- <script src="./index.js"></script> -->
 <script>
-  Promise.reject("CCC");
+  // Promise.reject("CCC");
   // window.addEventListener("unhandledrejection", (event) => {
   //   console.log("unhandledrejection:" + event.reason); // 捕获后自定义处理
   // });
@@ -43,24 +45,6 @@
   button.addEventListener("click", function () {
     console.log("ACAAC");
   });
-  function getJSON(url) {
-    return new Promise((resolve, reject) => {
-      var xhr = new XMLHttpRequest();
-      xhr.open("GET", url, true);
-      xhr.onreadystatechange = function () {
-        if (this.readyState === 4) {
-          if (this.status === 200) {
-            resolve(this.responseText, this);
-          } else {
-            var resJson = { code: this.status, response: this.response };
-            reject(resJson, this);
-          }
-        }
-      };
-      xhr.send();
-    });
-  }
-  getJSON("http://test.xiangyou.ouj.com:5000/test").then((data) => {
-    console.log("get" + data);
-  });
+
+  window.history.pushState({ a: "CCCCC" }, "test", "/");
 </script>

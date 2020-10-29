@@ -28,5 +28,8 @@ router.get("/error/:jpg", async (ctx, next) => {
     ctx.type = "image/jpg";
 });
 router.get("/test", async (ctx, next) => {
-    ctx.body = JSON.stringify({ RES: "OK" });
+    ctx.body = JSON.stringify({ RES: "GET OK" });
+});
+router.post("/test", async (ctx, next) => {
+    ctx.body = JSON.stringify({ RES: "POST OK" });
 });

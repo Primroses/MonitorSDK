@@ -46,6 +46,19 @@ interface TrackData {
   trackContent: string;
   trackTarget: string;
   trackType: string;
+
+  body: string;
+  url: string;
+  method: string;
+
+  requestType: string;
+
+  init: string;
+  input: string;
+
+  routeType: string;
+  routeData: string;
+  title: string;
 }
 
 export async function trackController(data: TrackData) {
@@ -66,11 +79,23 @@ export async function trackController(data: TrackData) {
     refererUrl,
     timeStamp,
     trackId,
-    offsetX,
-    offsetY,
+
     trackContent,
     trackTarget,
     trackType,
+
+    requestType,
+
+    init,
+    input,
+
+    body,
+    url,
+    method,
+
+    routeType,
+    routeData,
+    title,
   } = data;
   let sql;
   if (mainType === "EVENT") {
@@ -91,8 +116,6 @@ export async function trackController(data: TrackData) {
       refererUrl,
       timeStamp,
       trackId,
-      offsetX,
-      offsetY,
       trackContent,
       trackTarget,
       trackType
@@ -113,14 +136,142 @@ export async function trackController(data: TrackData) {
       '${refererUrl}',
       '${timeStamp}',
       '${trackId}',
-      '${offsetX}',
-      '${offsetY}',
       '${trackContent}',
       '${trackTarget}',
       '${trackType}'
     )`;
+  } else if (mainType === "REQUEST") {
+    if (requestType === "AJAX") {
+      sql = `insert into track(
+      appId,
+      userId,
+      apiVersion,
+      appVersion,
+      currentUrl,
+      ua,
+      type,
+      os,
+      mainType,
+      pageHeight,
+      pageWidth,
+      screenHeight,
+      screenWidth,
+      refererUrl,
+      timeStamp,
+      trackId,
+      body,
+      url,
+      method,
+      requestType
+    ) values (
+      '${appId}',
+      '${userId}',
+      '${apiVersion}',
+      '${appVersion}',
+      '${currentUrl}',
+      '${ua}',
+      '${type}',
+      '${os}',
+      '${mainType}',
+      '${pageHeight}',
+      '${pageWidth}',
+      '${screenHeight}',
+      '${screenWidth}',
+      '${refererUrl}',
+      '${timeStamp}',
+      '${trackId}',
+      '${body}',
+      '${url}',
+      '${method}',
+      '${requestType}'
+    )`;
+    } else if (requestType === "FETCH") {
+      sql = `insert into track(
+        appId,
+        userId,
+        apiVersion,
+        appVersion,
+        currentUrl,
+        ua,
+        type,
+        os,
+        mainType,
+        pageHeight,
+        pageWidth,
+        screenHeight,
+        screenWidth,
+        refererUrl,
+        timeStamp,
+        trackId,
+        init,
+        input,
+        requestType
+      ) values (
+        '${appId}',
+        '${userId}',
+        '${apiVersion}',
+        '${appVersion}',
+        '${currentUrl}',
+        '${ua}',
+        '${type}',
+        '${os}',
+        '${mainType}',
+        '${pageHeight}',
+        '${pageWidth}',
+        '${screenHeight}',
+        '${screenWidth}',
+        '${refererUrl}',
+        '${timeStamp}',
+        '${trackId}',
+        '${init}',
+        '${input}',
+        '${requestType}'
+      )`;
+    }
+  } else if (routeType) {
+    sql = `insert into track(
+      appId,
+      userId,
+      apiVersion,
+      appVersion,
+      currentUrl,
+      ua,
+      type,
+      os,
+      mainType,
+      pageHeight,
+      pageWidth,
+      screenHeight,
+      screenWidth,
+      refererUrl,
+      timeStamp,
+      trackId,
+      routeType,
+      routeData,
+      title
+    ) values (
+      '${appId}',
+      '${userId}',
+      '${apiVersion}',
+      '${appVersion}',
+      '${currentUrl}',
+      '${ua}',
+      '${type}',
+      '${os}',
+      '${mainType}',
+      '${pageHeight}',
+      '${pageWidth}',
+      '${screenHeight}',
+      '${screenWidth}',
+      '${refererUrl}',
+      '${timeStamp}',
+      '${trackId}',
+      '${routeType}',
+      '${routeData}',
+      '${title}'
+    )`;
   }
-  // console.log(sql);
+  console.log(sql);
   try {
     await useQuery(sql);
   } catch (error) {
