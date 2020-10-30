@@ -1,6 +1,5 @@
 import { Context } from "./../index";
 // 路由可能有几种 单页面 和 多页面的
-import { getPageInfo } from "../utils/index";
 import { Data } from "../data/index";
 
 type historyKeys = keyof Pick<History, "pushState" | "replaceState">;
@@ -17,24 +16,16 @@ function patchHistory(context: Context) {
     const originHistoryFun = window.history[val];
     window.history[val] = function (data: any, title: string, url?: string) {
       const historyData = Object.assign(context.data(), {
-        timeStamp: new Date().toString(),
         mainType: "ROUTE",
-        data: {
-          routeData: JSON.stringify(data),
+        data: JSON.stringify({
+          routeData: data,
           title,
           url,
           routeType: val,
-        },
-        pageInfo: getPageInfo(),
-        currentUrl: window.location.href,
-        refererUrl: document.referrer || "/", // 看下来源
+        }),
       });
 
-      context.worker.add("indexDB", {
-        operatorType: "add",
-        tableName: "track",
-        data: historyData,
-      });
+      context.addIndexDB(historyData, "track");
 
       return originHistoryFun && originHistoryFun.call(this, data, title, url);
     };
@@ -48,22 +39,14 @@ function patchHash(context: Context) {
     const url = "/" + window.location.hash.substr(1);
 
     const data: Data = Object.assign(context.data(), {
-      timeStamp: new Date().toString(),
       mainType: "ROUTE",
-      data: {
+      data: JSON.stringify({
         url,
         routeType: "Hash",
-      },
-      pageInfo: getPageInfo(),
-      currentUrl: window.location.href,
-      refererUrl: document.referrer || "/", // 看下来源
+      }),
     });
 
-    context.worker.add("indexDB", {
-      operatorType: "add",
-      tableName: "track",
-      data,
-    });
+    context.addIndexDB(data, "track");
 
     return originHashChange && originHashChange.call(this, event);
   };

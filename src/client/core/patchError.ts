@@ -1,8 +1,8 @@
 // error 可以 捕获 error 和 资源加载错误
 
 import { Context } from "../index";
-import { ErrorData } from "../data/index";
-import { getPageInfo } from "../utils/index";
+import { Data } from "../data/index";
+
 
 export default function patchError(context: Context) {
   // 应该不会内部都报错的吧???? 这么拉胯的吗?
@@ -39,13 +39,9 @@ export default function patchError(context: Context) {
         };
       }
       // 整合一手 数据
-      const data: ErrorData = Object.assign(context.data(), {
-        timeStamp: new Date().toString(),
+      const data: Data = Object.assign(context.data(), {
         mainType: params.resourceType ? "RESOURCE" : "ERROR",
-        data: params,
-        pageInfo: getPageInfo(),
-        currentUrl: window.location.href,
-        refererUrl: document.referrer || "/", // 看下来源
+        data: JSON.stringify(params),
       }); // 覆盖第一个参数
       // 操作数据库 (这种是不是应该马上上报呢?) 发生错误 应该直接上报
       context.request({ ...data, tableName: "error" }, "/error");

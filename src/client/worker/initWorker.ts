@@ -1,4 +1,4 @@
-import Store from "../utils/storage";
+import {store,Store} from "../utils/storage";
 import { Data } from "../data/index";
 
 interface sendWorkData {
@@ -17,9 +17,9 @@ export class InitWorker {
   success: boolean;
   messageQuene: sendData[];
   constructor() {
-    this.worker = new Worker("../worker.js");
+    this.worker = new Worker("./worker.js");
     this.messageQuene = [];
-    this.store = new Store();
+    this.store = store;
   }
   /**
    * @param {sendData} data
@@ -73,7 +73,7 @@ export class InitWorker {
         that.store.set("LastVisited", acceptLastVisited);
       } else if (saveType === "indexDB") {
         // 这里需要一个 tableName 在写入的时候 写进去
-        console.log(data, tableName);
+        // console.log(data, tableName);
         req({ ...data, tableName: tableName }, `/error`);
       }
     });

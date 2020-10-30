@@ -145,10 +145,10 @@ export function cycleTask(time: number, callBack: Function) {
 // 可能得有兼容性 考虑
 export function getPageInfo() {
   return {
-    pageWidth: document.body.clientWidth,
-    pageHeight: document.body.clientHeight,
-    screenWidth: window.screen.width,
-    screenHeight: window.screen.height,
+    pageWidth: document.body ? document.body.clientWidth : 0,
+    pageHeight: document.body ? document.body.clientHeight : 0,
+    screenWidth: window.screen.width || 0,
+    screenHeight: window.screen.height || 0,
   };
 }
 
@@ -167,9 +167,8 @@ export function deepClone(obj: any, map = new Map()) {
   return _obj;
 }
 
-
-export function genNonDuplicateID(){
-  let idStr = Date.now().toString(36)
-  idStr += Math.random().toString(36).substr(3)
-  return idStr
+export function genNonDuplicateID() {
+  let idStr = Date.now().toString(36);
+  idStr += Math.random().toString(36).substr(3);
+  return idStr;
 }

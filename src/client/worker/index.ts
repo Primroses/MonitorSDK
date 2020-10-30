@@ -1,5 +1,5 @@
 import DB from "../data/dataBase";
-import { ErrorData, TrackData } from "../data/index";
+import { Data } from "../data/index";
 
 // 这里是做数据清洗的 因为可能会多次触发同一次事件
 
@@ -45,7 +45,7 @@ async function cleanTable(DBRequest: IDBDatabase, tableName: TableName) {
     const data = await db.read(DBRequest, tableName);
     await db.clear(DBRequest, tableName); // 然后清除表
     console.log("[Cleaned Table " + tableName + " ]");
-    const map = divideDataToMap(data as ErrorData[] | TrackData[]);
+    const map = divideDataToMap(data);
 
     for (let [key, value] of map) {
       // 清理过后的数据
@@ -66,14 +66,14 @@ async function cleanTable(DBRequest: IDBDatabase, tableName: TableName) {
 /**
  * 根据mainType来区分数据
  * mainType 存在Data里面 所以直接遍历data 就可以了..
- * @param {(ErrorData[] | TrackData[])} data
+ * @param {Data[]} data
  * @returns
  */
-function divideDataToMap(data: ErrorData[] | TrackData[]) {
-  const divideMap = new Map<MainDataType, ErrorData[] | TrackData[]>();
+function divideDataToMap(data: Data[]) {
+  const divideMap = new Map<MainDataType, Data[]>();
   for (let val of data) {
     if (!divideMap.get(val.mainType)) {
-      const arr: ErrorData[] | TrackData[] = [];
+      const arr: Data[] = [];
       arr.push(val);
       divideMap.set(val.mainType, arr);
     } else {
@@ -92,10 +92,7 @@ function divideDataToMap(data: ErrorData[] | TrackData[]) {
  * @param {(ErrorData[] | TrackData[])} data
  * @returns {(ErrorData[] & TrackData[])}
  */
-function filterTable(
-  data: ErrorData[] | TrackData[],
-  mainType: MainDataType
-): ErrorData[] | TrackData[] {
+function filterTable(data: Data[], mainType: MainDataType): Data[] {
   // 刚开始或者是 别的 错手删掉的时候 就直接返回
   if (!data.length) {
     return data;
@@ -107,11 +104,11 @@ function filterTable(
   // LRU 是 基本数据类型的值都可以用数组来做 但是 如果是map 就不行了....
 
   // 超级简单的 LRU 就是用一个map 疯狂的重复赋值?
-  const filterMap = new Map<string, ErrorData | TrackData>();
-  const retData: ErrorData[] | TrackData[] = [];
+  const filterMap = new Map<string, Data>();
+  const retData: Data[] = [];
   // 这个逼 不知道自己是什么类型
-  (data as ErrorData[]).forEach((val) => {
-    filterMap.set(JSON.stringify(val.data), val);
+  data.forEach((val) => {
+    filterMap.set(val.data, val);
   });
   for (let [, value] of filterMap) {
     retData.push(value);
@@ -161,12 +158,12 @@ async function main() {
 
     if (saveType === "store") {
       // 够时间了 就开一手 hack 定时任务
-      startCleanWorker(DBRequest);
       if (
         // 这里localStorage 存放的永远是字符串 所以 不能用 !data.LastVisited 来简单判断
         data.LastVisited === "undefined" ||
         currentVisited - parseInt(data.LastVisited) > TIMEGAP
       ) {
+        startCleanWorker(DBRequest);
         // 顺便记录一下时间
         postMessage(
           JSON.stringify({
@@ -177,7 +174,7 @@ async function main() {
       }
     } else if (saveType === "indexDB") {
       const { operatorType, tableName } = data;
-      console.log(data)
+      // console.log(data);
       // console.log(operatorType, tableName, "indexDB");
       db[operatorType as OperatorType](DBRequest, tableName, data.data);
     }

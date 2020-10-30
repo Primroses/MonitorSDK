@@ -1,5 +1,5 @@
 import { Context } from "./../index";
-import { getPageInfo } from "../utils/index";
+
 // 代理用户的请求
 export default function patchRequest(context: Context) {
   // console.log(context, "Request");
@@ -44,23 +44,15 @@ function patchAjax(context: Context) {
     const params = dataMap.get(currentTime);
 
     const data = Object.assign(context.data(), {
-      timeStamp: new Date(),
       mainType: "REQUEST",
       data: {
         ...params,
         body,
         requestType: "AJAX",
       },
-      pageInfo: getPageInfo(),
-      currentUrl: window.location.href,
-      refererUrl: document.referrer || "/", // 看下来源
     });
 
-    context.worker.add("indexDB", {
-      operatorType: "add",
-      tableName: "track",
-      data,
-    });
+    context.addIndexDB(data, "track");
 
     currentTime += 1;
     return originSend && originSend.call(this, body);
@@ -71,23 +63,14 @@ function patchFetch(context: Context) {
   const originFetch = window.fetch;
   window.fetch = (input: RequestInfo, init?: RequestInit) => {
     const data = Object.assign(context.data(), {
-      timeStamp: new Date(),
       mainType: "REQUEST",
-      data: {
+      data: JSON.stringify({
         input,
-        init: JSON.stringify(init),
+        init: init,
         requestType: "FETCH",
-      },
-      pageInfo: getPageInfo(),
-      currentUrl: window.location.href,
-      refererUrl: document.referrer || "/", // 看下来源
+      }),
     });
-
-    context.worker.add("indexDB", {
-      operatorType: "add",
-      tableName: "track",
-      data,
-    });
+    context.addIndexDB(data, "track");
     return originFetch && originFetch.call(this, input, init);
   };
 }

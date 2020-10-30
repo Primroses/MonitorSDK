@@ -37,12 +37,6 @@ CREATE TABLE `error` (
   `refererUrl` varchar(50) DEFAULT NULL,
   `timeStamp` varchar(50) DEFAULT NULL,
   `trackId` varchar(50) DEFAULT NULL,
-  `resourceType` varchar(50) DEFAULT NULL,
-  `sourceUrl` varchar(50) DEFAULT NULL,
-  `filename` varchar(50) DEFAULT NULL,
-  `lineno` varchar(50) DEFAULT NULL,
-  `message` varchar(255) DEFAULT NULL,
-  `stack` varchar(255) DEFAULT NULL,
-  `reason` varchar(225) DEFAULT NULL,
+  `data` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`errorId`)
 ) ENGINE=InnoDB AUTO_INCREMENT=84 DEFAULT CHARSET=utf8;

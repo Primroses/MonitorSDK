@@ -1,6 +1,5 @@
 import { Context } from "./../index";
-import { ErrorData } from "../data/index";
-import { getPageInfo } from "../utils/index";
+import { Data } from "../data/index";
 
 // 10.24 看到的一个 warp Patch方法的一个操作
 export default async function warpPatch(context: Context) {
@@ -24,24 +23,16 @@ export default async function warpPatch(context: Context) {
       } catch (e) {
         // console.dir(e);
         if (e) {
-          const data: ErrorData = Object.assign(context.data(), {
-            timeStamp: new Date().toString(),
+          const data: Data = Object.assign(context.data(), {
             mainType: "EVENTLISTENER",
-            data: {
+            data: JSON.stringify({
               message: e.message,
               stack: e.stack,
-            },
-            pageInfo: getPageInfo(),
-            currentUrl: window.location.href,
-            refererUrl: document.referrer || "/", // 看下来源
+            }),
             eventType: e.name,
           }); // 覆盖第一个参数
 
-          context.worker.add("indexDB", {
-            operatorType: "add",
-            tableName: "error",
-            data,
-          });
+          context.addIndexDB(data);
         }
       }
     };

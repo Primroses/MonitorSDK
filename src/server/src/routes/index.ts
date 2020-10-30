@@ -13,12 +13,7 @@ router.get("/error/:jpg", async (ctx, next) => {
   const filePath = fs.readFileSync(
     path.join(__dirname, "../../src/public/images.jpg")
   ); // 要返回一个对应的jpg
-  console.log(query.tableName);
-  if (query.tableName === "error") {
-    errorController(query);
-  } else if (query.tableName === "track") {
-    trackController(query);
-  }
+  errorController(query);
   ctx.body = filePath;
   ctx.type = "image/jpg";
 });
@@ -26,7 +21,6 @@ router.get("/error/:jpg", async (ctx, next) => {
 router.get("/test", async (ctx, next) => {
   ctx.body = JSON.stringify({ RES: "GET OK" });
 });
-
 
 router.post("/test", async (ctx, next) => {
   ctx.body = JSON.stringify({ RES: "POST OK" });

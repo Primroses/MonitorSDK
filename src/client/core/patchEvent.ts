@@ -1,6 +1,6 @@
 import { Context } from "./../index";
 // 把所有的事件都代理
-import { getPageInfo } from "../utils/index";
+
 type EventKeys = keyof WindowEventMap;
 
 export default function patchEvent(context: Context) {
@@ -39,7 +39,9 @@ export default function patchEvent(context: Context) {
     } else if (!id && !className) {
       return `${tagName.toLowerCase()}`;
     }
-    return `[${tagName.toLowerCase()}][id=${id}][class=${className.split(" ")}]`;
+    return `[${tagName.toLowerCase()}][id=${id}][class=${className.split(
+      " "
+    )}]`;
   };
 
   eventMaps.forEach((val) => {
@@ -55,19 +57,11 @@ export default function patchEvent(context: Context) {
         };
 
         const data = Object.assign(context.data(), {
-          timeStamp: new Date().toString(),
           mainType: "EVENT",
-          data: params,
-          pageInfo: getPageInfo(),
-          currentUrl: window.location.href,
-          refererUrl: document.referrer ||  "/", // 看下来源
+          data: JSON.stringify(params),
         });
 
-        context.worker.add("indexDB", {
-          operatorType: "add",
-          tableName: "track",
-          data,
-        });
+        context.addIndexDB(data, "track");
       }
     });
   }, true);

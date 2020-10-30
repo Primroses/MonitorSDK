@@ -1,6 +1,6 @@
 import typescript from "@rollup/plugin-typescript";
 // import sourceMaps from "rollup-plugin-sourcemaps"; // 生成sourceMap
-import resolve from "rollup-plugin-node-resolve"; // for using third party modules in node_modules
+// import resolve from "rollup-plugin-node-resolve"; // for using third party modules in node_modules
 import { terser } from "rollup-plugin-terser"; // Rollup plugin to minify generated es bundle.
 // 这个 rollup-plugin-commonjs 插件就是用来将 CommonJS 转换成 ES2015 模块的。
 import { uglify } from "rollup-plugin-uglify"; // 这个东西不支持ES6的构建的时候 得target是ES5
@@ -12,9 +12,19 @@ export default {
       // typescript: require("typescript"),
     }),
     // sourceMaps(),
-    resolve(),
-    // terser(),
-    // uglify(),
+    // resolve(),
+    terser(),
+    uglify({
+      output: {
+        comments: function (node, comment) {
+          if (comment.type === "comment2") {
+            // multiline comment
+            return /@preserve|@license|@cc_on/i.test(comment.value);
+          }
+          return false;
+        },
+      },
+    }),
   ],
   input: "src/client/worker/index.ts",
   // sourceMap: true,

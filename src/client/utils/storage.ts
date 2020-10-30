@@ -1,5 +1,5 @@
 // 比较简单的封装了一下
-export default class Store {
+export class Store {
   constructor() {}
   remove(key: string) {
     localStorage.removeItem(key);
@@ -11,3 +11,5 @@ export default class Store {
     return localStorage.getItem(key);
   }
 }
+
+export const store = new Store();

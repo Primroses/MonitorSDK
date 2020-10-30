@@ -1,4 +1,4 @@
-import { Data, ErrorData, TrackData } from "./index";
+import { Data } from "./index";
 interface TransactionList {
   (DB: IDBDatabase): void;
 }
@@ -13,21 +13,14 @@ interface TransactionList {
  * @class DB
  */
 export default class DB {
-  transactionList: TransactionList[];
   DBRequest: IDBOpenDBRequest;
   constructor(databaseName: string, version = 1.0) {
     const that = this; //保存一下 怕回调函数 搞错了this
     this.DBRequest = indexedDB.open(databaseName, version);
-    this.transactionList = [];
-    this.DBRequest.onerror = function () {
-      // beautifyConsole("[ MonitorSDK ]", "数据库打开报错");
-    };
+    this.DBRequest.onerror = function () {};
 
     this.DBRequest.onsuccess = function () {
-      // that.DB = DBRequest.result;
-      // beautifyConsole("[ MonitorSDK ]", "数据库打开成功");
       // 只能拿到的时候 再用 观察者 模式 进行 开搞
-      that.transactionList.forEach((val) => val(that.DBRequest.result));
     };
 
     this.DBRequest.onupgradeneeded = function (event: any) {
@@ -51,6 +44,14 @@ export default class DB {
         // 这是创建字段 索引是方便 搜索吧?
         objectStore.createIndex("mainType", "mainType");
       }
+      if (!currentDB.objectStoreNames.contains("performance")) {
+        const objectStore = currentDB.createObjectStore("performance", {
+          keyPath: "performanceId",
+          autoIncrement: true,
+        });
+        // 这是创建字段 索引是方便 搜索吧?
+        objectStore.createIndex("mainType", "mainType");
+      }
     };
   }
 
@@ -63,42 +64,19 @@ export default class DB {
     });
   }
 
-  async add(
-    DBRequest: IDBDatabase,
-    tableName: string,
-    data: ErrorData | TrackData
-  ) {
+  async add(DBRequest: IDBDatabase, tableName: string, data: Data) {
     // 放在宏任务 里面 等待 出来? 感觉是不是有点 问题?
     // 感觉还是观察者模式 比较靠谱一些
     // 类似中间件类型的 写一个 函数 可以执行?
-
-    // this.transactionList.push(function (DB) {
-    //   // 哪个表的事务.... 感觉有点多余
-    // const request = DB.transaction([tableName], "readwrite")
-    //   .objectStore(tableName)
-    //   .add(data);
-
-    //   request.onsuccess = function (event) {
-    //     console.log("数据写入成功");
-    //   };
-    //   request.onerror = function (event) {
-    //     console.warn(event);
-    //     console.log("数据写入失败");
-    //   };
-    // });
-
-    // const DBRequest = await this.DBResolve();
     const request = DBRequest.transaction([tableName], "readwrite")
       .objectStore(tableName)
       .add(data);
 
     return new Promise((resolve, reject) => {
       request.addEventListener("success", function (event) {
-        // console.log("[IndexDB]", "Add Success");
         resolve(event);
       });
       request.addEventListener("error", function (event) {
-        // console.log("[IndexDB]", "Add failed");
         reject(event);
       });
     });
@@ -107,26 +85,14 @@ export default class DB {
   // 感觉还是得设计成 promise 比较友好一点 毕竟异步
 
   async read(DBRequest: IDBDatabase, tableName: string, mainType?: string) {
-    // this.transactionList.push(function (DB) {
-    //   const result = [];
-    //   var objectStore = DB.transaction([tableName]).objectStore(tableName);
-    //   objectStore.openCursor().onsuccess = function (event: any) {
-    //     var cursor = event.target.result;
-    //     if (cursor) {
-    //       result.push(cursor.value);
-    //       cursor.continue();
-    //     } else {
-    //       console.log("没有更多数据了！");
-    //     }
-    //   };
-    // });
-    const result: ErrorData[] | TrackData[] = [];
+    const result: Data[] = [];
     const objectStore = DBRequest.transaction([tableName]).objectStore(
       tableName
     );
     if (mainType) {
+      // 这个是基于索引搜索的 感觉作用不大 因为如果是索引是多个的话 就不知道什么时候发送完
       const indexRequest = objectStore.index("mainType").get(mainType);
-      return new Promise<ErrorData | TrackData>((resolve, reject) => {
+      return new Promise<Data[]>((resolve, reject) => {
         indexRequest.addEventListener("success", function (event: any) {
           var cursor = event.target.result; //不是游标 是一个个数据
           resolve(cursor);
@@ -136,7 +102,7 @@ export default class DB {
         });
       });
     } else {
-      return new Promise<ErrorData[] | TrackData[]>((resolve, reject) => {
+      return new Promise<Data[]>((resolve, reject) => {
         objectStore
           .openCursor()
           .addEventListener("success", function (event: any) {
