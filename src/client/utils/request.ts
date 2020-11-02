@@ -27,8 +27,33 @@ export function getRequsetUrl(data: Data, url: string): string {
   }
   getDataStr(data);
   dataStr = dataStr.substring(dataStr.lastIndexOf("&"), -1);
+  // 这里可能还得要一个分割Id  因为用的是Get 请求 可能 会 超过url的限制
   return dataStr;
 }
+
+// 这样的话就会有跨域问题了....
+export function postRequestUrl(data: Data, url: string) {
+  const config = {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    cache: "force-cache",
+    // credentials: "include",
+  };
+  Object.defineProperty(config, "body", {
+    value: JSON.stringify(data),
+  });
+  try {
+    fetch(url, config as RequestInit);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+// export function postConcurrent(){
+
+// }
 
 // 即时上报?
 

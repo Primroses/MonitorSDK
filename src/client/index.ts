@@ -10,7 +10,7 @@ import customDot from "./core/customDot";
 import { patchVue } from "./core/integrateFrame";
 
 import { beautifyConsole, deepClone } from "./utils/index";
-import { useRequest, getRequsetUrl } from "./utils/request";
+import { useRequest, getRequsetUrl, postRequestUrl } from "./utils/request";
 import DB from "./data/dataBase";
 import { Store, store } from "./utils/storage";
 import { Data } from "./data/index";
@@ -37,11 +37,13 @@ export interface Context {
     operatorType?: OperatorType
   ) => void;
   store: Store;
+  filterUrl: string[];
 }
 
 interface Options {
   baseUrl: string;
   userId: string;
+  Vue: any;
 }
 
 // 外面调用的主入口
@@ -49,7 +51,7 @@ interface Options {
 // baseUrl , userId ,appVersion apiVersion appId ,增加一个开关? 是否需要监听什么类型的?
 export function initMonitor(options: Options) {
   const db = new DB("monitor");
-  const { baseUrl, userId } = options;
+  const { baseUrl, userId, Vue } = options;
   const initData = new Data({
     userId,
     trackId: genNonDuplicateID(),
@@ -65,15 +67,21 @@ export function initMonitor(options: Options) {
     refererUrl: document.referrer || "/", // 看下来源
     timeStamp: new Date().toString(),
   });
-  const req = (data: Data, url: string) => {
+  // 这个是new Image
+  const getReq = (data: Data, url: string) => {
     const reqUrl = getRequsetUrl(data, baseUrl + url);
     useRequest(reqUrl);
   };
+  // 这里是fetch
+  const postReq = (data: Data, url: string) => {
+    postRequestUrl(data, baseUrl + url);
+  };
+
   // 传递的上下文 ... 单例
   const context: Context = {
     db,
     data: () => deepClone(initData), // 工厂函数
-    request: req,
+    request: getReq,
     worker,
     addIndexDB: (
       data: any,
@@ -81,9 +89,10 @@ export function initMonitor(options: Options) {
       operatorType: OperatorType = "add"
     ) => worker.add("indexDB", { operatorType, tableName, data }),
     store,
+    filterUrl: ["login", "register", "postError", "sockjs-node"],
   };
 
-  workerMain(req);
+  workerMain(getReq, postReq);
   // 初始化 一些 data?
 
   // 相当于先把这些 patch的 function 拿出来
@@ -102,17 +111,12 @@ export function initMonitor(options: Options) {
   ];
   // 不用forEach是希望 串行 而不是并行，中间假如涉及异步了 也能一个个来
   for (let i = 0; i < patchFunction.length; i++) {
-    // if (i === patchFunction.length - 1) {
-    //   patchFunction[i](Vue, context);
-    // } else {
-    //   (patchFunction[i] as (context: Context) => void)(context);
-    // }
     patchFunction[i](context);
   }
-
+  patchVue(context, Vue);
   beautifyConsole("[ MonitorSDK ]", "Starting Monitor");
   // 返回一个可以上报的接口? 让可以强制上报？
   return {
-    req,
+    getReq,
   };
 }

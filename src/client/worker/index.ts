@@ -1,3 +1,4 @@
+import { beautifyConsole } from "./../utils/index";
 import DB from "../data/dataBase";
 import { Data } from "../data/index";
 
@@ -36,7 +37,6 @@ const db = new DB("monitor"); // worker 跟 主线程的db Request 是不同的 
  */
 async function cleanTable(DBRequest: IDBDatabase, tableName: TableName) {
   // 我觉得 error 里面就应该存在那种 patch Function中出现的问题 。正常的error 都应该直接上报的
-
   // 定时清理 但是 应该要的是LRU 才对的 翻转过来 的 LRU 好像有点扯?
   // 这种错误 直接过滤成
 
@@ -46,20 +46,22 @@ async function cleanTable(DBRequest: IDBDatabase, tableName: TableName) {
     await db.clear(DBRequest, tableName); // 然后清除表
     console.log("[Cleaned Table " + tableName + " ]");
     const map = divideDataToMap(data);
-
+    const afterFilterData = [];
     for (let [key, value] of map) {
       // 清理过后的数据
-      const filterData = filterTable(value, key);
-      for (let data of filterData) {
-        db.add(DBRequest, tableName, data);
-        postMessage(JSON.stringify({ saveType: "indexDB", data, tableName }));
-      }
+      const filterData = filterTable(value);
+      afterFilterData.push(filterData);
+      // for (let data of filterData) {
+      //    db.add(DBRequest, tableName, data); // 感觉就不用插回去了
+      //    这里有一个整合 假如这里很多条数据 就会占用很多次的请求 感觉性能会不太好 我们应该是在空闲的时候发送，或者是关闭浏览器的时候发送
+      //    postMessage(JSON.stringify({ saveType: "indexDB", data, tableName }));
+      // }
     }
+    return afterFilterData;
   } catch (error) {
     // 后面自己在捕获一手?
     console.error(error);
   }
-
   // 弄完最后再清理
 }
 
@@ -87,12 +89,11 @@ function divideDataToMap(data: Data[]) {
 
 /**
  *
- * @param {TableName} tableName
+ * @param {Data[]} data
  * @param {MainDataType} mainType
- * @param {(ErrorData[] | TrackData[])} data
- * @returns {(ErrorData[] & TrackData[])}
+ * @returns {Data[]}
  */
-function filterTable(data: Data[], mainType: MainDataType): Data[] {
+function filterTable(data: Data[]): Data[] {
   // 刚开始或者是 别的 错手删掉的时候 就直接返回
   if (!data.length) {
     return data;
@@ -123,16 +124,14 @@ function filterTable(data: Data[], mainType: MainDataType): Data[] {
  * @returns
  */
 async function startCleanWorker(DBRequest: IDBDatabase) {
-  // const DBRequest = await db.DBResolve();
-  const cleanTables: TableName[] = ["error", "track"];
-  return new Promise((resolve) => {
-    // console.log("[Worker]", "worker启动");
-    for (let i = 0; i < cleanTables.length; i++) {
-      // for 循环 不会并行 而是串行?
-      cleanTable(DBRequest, cleanTables[i]);
-    }
-    resolve(true);
-  });
+  const cleanTables: TableName[] = ["error", "track", "performance"];
+  const allAfterCleanData: Data[][] = [];
+  for (let i = 0; i < cleanTables.length; i++) {
+    // for 循环 不会并行 而是串行?
+    const afterCleanData = await cleanTable(DBRequest, cleanTables[i]);
+    allAfterCleanData.push(...afterCleanData);
+  }
+  postMessage(JSON.stringify({ data: allAfterCleanData, saveType: "indexDB" }));
 }
 
 // 前端定时任务? 是不是得 通过localstroage 来实现呢? 而且还是不太标准的定时任务?
@@ -141,10 +140,10 @@ async function startCleanWorker(DBRequest: IDBDatabase) {
 // main 入口
 // worker 是主要的桥梁 跟 indexDB 做交互的
 
-async function main() {
+export async function main() {
   const DBRequest = await db.DBResolve();
-  const TIMEGAP = 1000 * 60 * 60 * 24; // 一天差距
-
+  const TIMEGAP = 1000 * 60 * 60 * 24; // 一天差距 多少天上传一次
+  beautifyConsole("[Monitor SDK]", "Worker start");
   // 这里得调整一下 因为 有一个异步的原因 。当你的异步回来以后 可能后面的没有监听到 或者是没有执行 就比较拉胯
   // 这里得有一个 message的队列操作才行。
 
@@ -154,8 +153,10 @@ async function main() {
   // 如何保证 谁先谁后
   self.addEventListener("message", async function (message) {
     const currentVisited = new Date().getTime();
-    const { saveType, data } = JSON.parse(message.data);
-
+    const { saveType, data, idle } = JSON.parse(message.data);
+    if (idle) {
+      startCleanWorker(DBRequest);
+    }
     if (saveType === "store") {
       // 够时间了 就开一手 hack 定时任务
       if (
@@ -163,7 +164,6 @@ async function main() {
         data.LastVisited === "undefined" ||
         currentVisited - parseInt(data.LastVisited) > TIMEGAP
       ) {
-        startCleanWorker(DBRequest);
         // 顺便记录一下时间
         postMessage(
           JSON.stringify({

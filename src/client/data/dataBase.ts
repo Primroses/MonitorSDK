@@ -25,32 +25,18 @@ export default class DB {
 
     this.DBRequest.onupgradeneeded = function (event: any) {
       const currentDB = event.target.result;
+      const tableNames: TableName[] = ["error", "track", "performance"];
       // 这是一个表
-      if (!currentDB.objectStoreNames.contains("error")) {
-        // 自增长才能插入进去
-        const objectStore = currentDB.createObjectStore("error", {
-          keyPath: "errorId",
-          autoIncrement: true,
-        });
-        // 这是创建字段 索引是方便 搜索吧?
-        objectStore.createIndex("mainType", "mainType");
-      }
-      // track 也不是不行 记录的是这个人的 所操作的应用的过程
-      if (!currentDB.objectStoreNames.contains("track")) {
-        const objectStore = currentDB.createObjectStore("track", {
-          keyPath: "pathId",
-          autoIncrement: true,
-        });
-        // 这是创建字段 索引是方便 搜索吧?
-        objectStore.createIndex("mainType", "mainType");
-      }
-      if (!currentDB.objectStoreNames.contains("performance")) {
-        const objectStore = currentDB.createObjectStore("performance", {
-          keyPath: "performanceId",
-          autoIncrement: true,
-        });
-        // 这是创建字段 索引是方便 搜索吧?
-        objectStore.createIndex("mainType", "mainType");
+      for (let tableName of tableNames) {
+        if (!currentDB.objectStoreNames.contains(tableName)) {
+          // 自增长才能插入进去
+          const objectStore = currentDB.createObjectStore(tableName, {
+            keyPath: tableName === "track" ? `pathId` : `${tableName}Id`,
+            autoIncrement: true,
+          });
+          // 这是创建字段 索引是方便 搜索吧?
+          // objectStore.createIndex("mainType", "mainType");
+        }
       }
     };
   }

@@ -1,7 +1,4 @@
 // 事件总线
-import Publisher from "./publisher";
-import Subscriber from "./subscriber";
-
 // 这里感觉 不要结合 IndexDB 解耦一下indexDB 后续 还可以改为其他 操作数据的接口
 // 这里应该有 两个事件通道
 
@@ -11,10 +8,10 @@ import Subscriber from "./subscriber";
 // (3) Worker 把需要发送的数据 进 EventChannel ,Main
 
 // 就应该直接大写 定义常量 后续就直接用了....
-export type ChannelName = "MAIN" | "WORKER";
+export type ChannelName = "MAIN" | "WORKER" | "IDLE";
 export const MAINCHANNEL = "MAIN";
 export const WOERKERCHANNEL = "WORKER";
-
+export const IDLECHANNEL = "IDLE";
 // 单向数据流 ? 永远只有 发布者 告诉 订阅者 信息
 // 发布订阅 -> 发布 ----> channel -----> 订阅者
 
@@ -27,6 +24,7 @@ export default class EventChannel {
     this.channel = new Map<ChannelName, Function[]>();
     this.channel.set(MAINCHANNEL, []);
     this.channel.set(WOERKERCHANNEL, []);
+    this.channel.set(IDLECHANNEL, []);
     // this.publisher = new Publisher();
     // this.subscriber = new Subscriber();
   }

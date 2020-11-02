@@ -1,5 +1,11 @@
 /// <reference path="./node_modules/@types/jest/index.d.ts" />
 
+// declare global {
+//   interface Window {
+//     requestIdleCallback: (callBack: Function) => void;
+//   }
+// }
+
 interface User {
   userId: string | number;
   userName: string;
@@ -45,8 +51,6 @@ interface PageInfo {
 // 上报的数据类型
 // type DataType = "ERROR" | "PROMISE" | "AJAX" | "RESOURCE" | "TRACK" | "EVENT" | "PERFORMANCE";
 
-
-
 type MainDataType =
   | "ERROR"
   | "PROMISE"
@@ -57,9 +61,9 @@ type MainDataType =
   | "PERFORMANCE"
   | "EVENTLISTENER"
   | "CONSOLE"
-  | "REQUEST"
+  | "REQUEST";
 
-type TableName = "error" | "track"
+type TableName = "error" | "track" | "performance";
 
 // History的方法
 // type HistoryFun = "pushState" | "replaceState";

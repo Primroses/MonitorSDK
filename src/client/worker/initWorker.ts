@@ -1,5 +1,7 @@
-import {store,Store} from "../utils/storage";
+import { store, Store } from "../utils/storage";
 import { Data } from "../data/index";
+import { flatten } from "../utils/index";
+import { channel } from "../EventChannel/index";
 
 interface sendWorkData {
   operatorType: OperatorType;
@@ -8,7 +10,16 @@ interface sendWorkData {
     [key: string]: any;
   };
 }
-type ContextRequest = (data: Data & { tableName: string }, url: string) => void;
+type ContextGetRequest = (
+  data: Data & { tableName: string },
+  url: string
+) => void;
+
+type ContextPostRequest = (
+  data: Data & { tableName: string },
+  url: string
+) => void;
+
 // 引入 web worker 增强计算能力?
 // 还是封装一手比较 舒服
 export class InitWorker {
@@ -44,19 +55,19 @@ export class InitWorker {
   /**
    *
    * @param {InitWorker} worker
-   * @param {ContextRequest} req
+   * @param {ContextGetRequest} req
    * @memberof InitWorker
    */
-  acceptMessageFromWorker(worker: InitWorker, req: ContextRequest) {
+  acceptMessageFromWorker(
+    worker: InitWorker,
+    getReq: ContextGetRequest,
+    postReq: ContextPostRequest
+  ) {
     const that = this;
     this.worker.addEventListener("message", (message: MessageEvent) => {
-      const {
-        saveType,
-        acceptLastVisited,
-        data,
-        tableName,
-        success,
-      } = JSON.parse(message.data);
+      const { saveType, acceptLastVisited, data, success } = JSON.parse(
+        message.data
+      );
 
       // 因为这里涉及一个 异步 和 谁先谁后的问题。最后采取worker准备好了 就通知主线程 再发送确保一定能收到通知后再进行操作
       // 谁先谁后 监听到就行?
@@ -68,13 +79,20 @@ export class InitWorker {
           data: { LastVisited },
         });
       }
-
       if (saveType === "store") {
         that.store.set("LastVisited", acceptLastVisited);
       } else if (saveType === "indexDB") {
+        // 因为这里已经是整合了的数据 可能会比较大 所以 这里要采取post的请求 不限制长度 也避免了 get 请求 出现特殊字符的时候 url 别截取的情况
         // 这里需要一个 tableName 在写入的时候 写进去
-        // console.log(data, tableName);
-        req({ ...data, tableName: tableName }, `/error`);
+        // getReq({ ...data, tableName }, `/error`);
+        // 这里得减少请求 次数
+        // postReq({ ...data, tableName }, `/postError`);
+        // reqQuene.push({ ...data, tableName, url: `/postError` });
+
+        // 这里的data 还得扁平化
+        const reqQuene = flatten(data); // 经过重重筛选后 最后的上报
+        // 把一次所有的都上报
+        postReq(reqQuene, `/postError`);
       }
     });
     this.worker.addEventListener("messageerror", (message: MessageEvent) => {});
@@ -115,8 +133,23 @@ export const worker = new InitWorker();
  *
  *
  * @export
- * @param {ContextRequest} req
+ * @param {ContextGetRequest} req
  */
-export function workerMain(req: ContextRequest) {
-  worker.acceptMessageFromWorker(worker, req);
+export function workerMain(
+  getReq: ContextGetRequest,
+  postReq: ContextPostRequest
+) {
+  worker.acceptMessageFromWorker(worker, getReq, postReq);
+
+  channel.subscribe("IDLE", function () {
+    if ((window as any).requestIdleCallback) {
+      (window as any).requestIdleCallback(function () {
+        console.log("idle");
+        worker.worker.postMessage(JSON.stringify({ idle: true }));
+      });
+    } else {
+      // 不支持就直接发送了 占用一点资源
+      worker.worker.postMessage(JSON.stringify({ idle: true }));
+    }
+  });
 }

@@ -1,4 +1,5 @@
 import { Context } from "../index";
+import { Data } from "../data/index";
 // 用户打点的需求...
 // 可以全打点 也可以 针对打点....
 // 可以前端设计 后端设计也行...
@@ -17,7 +18,14 @@ export default function customDot(context: Context) {
       // console.log(target.getAttribute(CUSTOMATTR));
       // 这里就可以开始上报了? 自定义 覆盖打点规则
       // context.request()
-      console.log("[Monitor-Click]", target, attr);
+      const data: Data = Object.assign(context.data(), {
+        mainType: "PROMISE",
+        data: JSON.stringify({
+          target,
+          attr,
+        }),
+      });
+      context.addIndexDB(data, "track");
     }
   });
 
@@ -32,14 +40,16 @@ function recordPV(context: Context) {
   currentDate = currentDate.indexOf("/")
     ? currentDate.replace(/(\/)/g, "")
     : currentDate.replace(/-/g, "");
-  // console.log(date);
+  const data = {
+    date: currentDate,
+    // pv: 1,
+  };
   const PV = context.store.get("PV");
   if (!PV || PV === "undefined") {
-    const data = {
-      date: currentDate,
+    const PVData = Object.assign(data, {
       pv: 1,
-    };
-    context.store.set("PV", JSON.stringify(data));
+    });
+    context.store.set("PV", JSON.stringify(PVData));
   } else {
     let { date, pv } = JSON.parse(PV);
     if (date === currentDate) {
@@ -51,6 +61,9 @@ function recordPV(context: Context) {
       // context.request()
     }
   }
+
+  // UV 直接发吧我觉得 后台处理
+  //  context.request();
 
   // PV(访问量)  ：即Page View, 即页面浏览量或点击量，用户每次刷新即被计算一次。
   // UV(独立访客)：即Unique Visitor,访问您网站的一台电脑客户端为一个访客。00:00-24:00内相同的客户端只被计算一次。

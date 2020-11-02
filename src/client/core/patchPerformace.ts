@@ -1,3 +1,4 @@
+import { channel } from '../EventChannel/index';
 import { Context } from "../index";
 import { Data } from "../data/index";
 
@@ -26,8 +27,8 @@ export default function patchPerformace(context: Context) {
           mainType: "Performance",
           data: JSON.stringify(params),
         });
-
         context.addIndexDB(data, "performance");
+        channel.publish("IDLE");
         clearInterval(timer);
         timer = null;
       }
@@ -56,6 +57,7 @@ function getResourcePerformance(context: Context) {
     mainType: "Performance",
     data: JSON.stringify(params),
   });
+
   context.addIndexDB(data, "performance");
 }
 

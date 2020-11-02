@@ -9,8 +9,6 @@ export default function patchRequest(context: Context) {
 
 // 这里还是分开操作吧 一起操作可能会出事  虽然不太可能一个项目 又用fetch 又有ajax
 function patchAjax(context: Context) {
-  const filterUrl = ["login", "register"];
-
   let currentTime = 0;
   // 这里的数据得组装
   const dataMap = new Map<number, { [key: string]: any }>();
@@ -19,13 +17,12 @@ function patchAjax(context: Context) {
   const originSend = XMLHttpRequest.prototype.send;
 
   XMLHttpRequest.prototype.open = function (method: string, url: string) {
-    if (filterUrl.indexOf(url) < 0) {
-      const params = {
-        method,
-        url,
-      };
-      dataMap.set(currentTime, params);
-    }
+    const params = {
+      method,
+      url,
+    };
+    dataMap.set(currentTime, params);
+
     return originOpen && originOpen.call(this, method, url);
   };
 
@@ -42,7 +39,6 @@ function patchAjax(context: Context) {
   ) {
     // 直接插进去 最后都会变成 一层的 一起发送
     const params = dataMap.get(currentTime);
-
     const data = Object.assign(context.data(), {
       mainType: "REQUEST",
       data: {
@@ -62,15 +58,20 @@ function patchAjax(context: Context) {
 function patchFetch(context: Context) {
   const originFetch = window.fetch;
   window.fetch = (input: RequestInfo, init?: RequestInit) => {
-    const data = Object.assign(context.data(), {
-      mainType: "REQUEST",
-      data: JSON.stringify({
-        input,
-        init: init,
-        requestType: "FETCH",
-      }),
+    const flag = context.filterUrl.every((val) => {
+      return (input as string).indexOf(val) < 0;
     });
-    context.addIndexDB(data, "track");
+    if (flag) {
+      const data = Object.assign(context.data(), {
+        mainType: "REQUEST",
+        data: JSON.stringify({
+          input,
+          init: init,
+          requestType: "FETCH",
+        }),
+      });
+      context.addIndexDB(data, "track");
+    }
     return originFetch && originFetch.call(this, input, init);
   };
 }

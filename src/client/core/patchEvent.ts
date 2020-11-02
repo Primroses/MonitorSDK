@@ -32,22 +32,20 @@ export default function patchEvent(context: Context) {
   ];
 
   const trackTarget = (tagName: string, id: string, className: string) => {
-    if (!className) {
-      return `${tagName.toLowerCase()}#${id}`;
-    } else if (!id) {
-      return `${tagName.toLowerCase()}.${className.split(" ").join(".")}`;
+    if (!className && id) {
+      return `${tagName.toLowerCase()}[id=${id}]`;
+    } else if (!id && className) {
+      return `${tagName.toLowerCase()}[class=${className.split(" ")}]`;
     } else if (!id && !className) {
       return `${tagName.toLowerCase()}`;
     }
-    return `[${tagName.toLowerCase()}][id=${id}][class=${className.split(
-      " "
-    )}]`;
+    return `[${tagName.toLowerCase()}][id=${id}][class=${className.split(" ")}]`;
   };
 
   eventMaps.forEach((val) => {
     window.addEventListener(val, (e: any) => {
       const { tagName, id, className, outerHTML } = e.target;
-      if (tagName != "HTML") {
+      if (tagName != "HTML" && tagName != "BODY") {
         const params = {
           trackTarget: trackTarget(tagName, id, className),
           // offsetX: e.offsetX,
