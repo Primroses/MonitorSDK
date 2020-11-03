@@ -155,7 +155,7 @@ export async function main() {
     const currentVisited = new Date().getTime();
     const { saveType, data, idle } = JSON.parse(message.data);
     if (idle) {
-      startCleanWorker(DBRequest);
+      // 空闲就clear Performance
     }
     if (saveType === "store") {
       // 够时间了 就开一手 hack 定时任务
@@ -164,6 +164,7 @@ export async function main() {
         data.LastVisited === "undefined" ||
         currentVisited - parseInt(data.LastVisited) > TIMEGAP
       ) {
+        startCleanWorker(DBRequest);
         // 顺便记录一下时间
         postMessage(
           JSON.stringify({
